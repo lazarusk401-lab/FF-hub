@@ -194,7 +194,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 ---------------------------------------------------------
--- FLUID MINIMIZE / RESTORE SYSTEM
+-- MINIMIZE / RESTORE SYSTEM
 ---------------------------------------------------------
 local menuOpen = true
 local originalPosition = tabLayout.Position
@@ -244,7 +244,7 @@ minimizeButton.Activated:Connect(minimizeToCircle)
 quickToggleBtn.Activated:Connect(restoreFromCircle)
 
 ---------------------------------------------------------
--- UI ELEMENT GENERATORS
+-- UI ELEMENT BUILDERS
 ---------------------------------------------------------
 local function createModernToggle(name, text, layoutOrder, callback)
     local container = Instance.new("Frame")
@@ -411,149 +411,30 @@ local function createModernSlider(name, text, layoutOrder, callback)
 end
 
 ---------------------------------------------------------
--- SPEED MECHANIC
+-- VISUAL BACKEND HOOKS (Safe Hand-Off Zones)
 ---------------------------------------------------------
-local speedEnabled = false
-local targetSpeed = 16
 
+-- 1. WalkSpeed Toggle
 createModernToggle("SpeedToggle", "Enable Custom Walkspeed", 1, function(state)
-    speedEnabled = state
-    local character = player.Character
-    if character and character:FindFirstChildOfClass("Humanoid") then
-        character:FindFirstChildOfClass("Humanoid").WalkSpeed = speedEnabled and targetSpeed or 16
-    end
+    print("Walkspeed UI State Changed:", state)
+    -- Your backend tool can insert custom speed code here
 end)
 
+-- 2. WalkSpeed Value Slider
 createModernSlider("SpeedSlider", "Speed Value", 2, function(percentage)
-    targetSpeed = 16 + (percentage * 150)
-    local character = player.Character
-    if speedEnabled and character and character:FindFirstChildOfClass("Humanoid") then
-        character:FindFirstChildOfClass("Humanoid").WalkSpeed = targetSpeed
-    end
+    local scalarValue = 16 + (percentage * 150)
+    print("Walkspeed UI Slider Value:", scalarValue)
+    -- Your backend tool can use this calculated number here
 end)
 
----------------------------------------------------------
--- FLY SEPARATE TOGGLE (Modern Engine Fix)
----------------------------------------------------------
-local flyEnabled = false
-local flyConnection = nil
-local linearVelocity = nil
-local alignOrientation = nil
-local attachment = nil
-local animCount = 0
-
+-- 3. Flight Mode Toggle
 createModernToggle("FlyToggle", "Flight Mode Active", 3, function(state)
-    flyEnabled = state
-    local character = player.Character
-    if not character then return end
-    local rootPart = character:WaitForChild("HumanoidRootPart", 2)
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not rootPart or not humanoid then return end
-
-    if flyEnabled then
-        -- Clean structural generation of modern constraints
-        attachment = Instance.new("Attachment")
-        attachment.Name = "FlyAttachment"
-        attachment.Parent = rootPart
-
-        linearVelocity = Instance.new("LinearVelocity")
-        linearVelocity.MaxForce = 50000
-        linearVelocity.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
-        linearVelocity.VectorVelocity = Vector3.new(0, 0, 0)
-        linearVelocity.Attachment0 = attachment
-        linearVelocity.Parent = rootPart
-        
-        alignOrientation = Instance.new("AlignOrientation")
-        alignOrientation.MaxTorque = 50000
-        alignOrientation.Responsiveness = 25
-        alignOrientation.Mode = Enum.OrientationMode.OneAttachment
-        alignOrientation.Attachment0 = attachment
-        alignOrientation.CFrame = rootPart.CFrame
-        alignOrientation.Parent = rootPart
-
-        humanoid.PlatformStand = true -- Blocks falling states cleanly
-
-        flyConnection = RunService.RenderStepped:Connect(function()
-            local camera = workspace.CurrentCamera
-            local moveDirection = humanoid.MoveDirection
-            local upVector = 0
-            
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                upVector = 1
-            elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-                upVector = -1
-            end
-            
-            animCount = animCount + 0.08
-            local floatOffset = math.sin(animCount) * 0.4
-            
-            alignOrientation.CFrame = camera.CFrame
-            linearVelocity.VectorVelocity = (moveDirection * 45) + Vector3.new(0, (upVector * 35) + floatOffset, 0)
-
-            -- Smooth Joint Ticking (R15 & R6 structural validation loops)
-            for _, motor in pairs(character:GetDescendants()) do
-                if motor:IsA("Motor6D") then
-                    if motor.Name:find("LeftHip") or motor.Name:find("Left Thigh") then
-                        motor.Transform = CFrame.Angles(0.3, 0, 0)
-                    elseif motor.Name:find("RightHip") or motor.Name:find("Right Thigh") then
-                        motor.Transform = CFrame.Angles(0.3, 0, 0)
-                    elseif motor.Name:find("Shoulder") or motor.Name:find("Arm") then
-                        motor.Transform = CFrame.Angles(-0.2, 0, 0)
-                    end
-                end
-            end
-        end)
-    else
-        -- Clean structural cleanup 
-        if flyConnection then flyConnection:Disconnect() flyConnection = nil end
-        if linearVelocity then linearVelocity:Destroy() linearVelocity = nil end
-        if alignOrientation then alignOrientation:Destroy() alignOrientation = nil end
-        if attachment then attachment:Destroy() attachment = nil end
-        
-        if humanoid then humanoid.PlatformStand = false end
-        
-        for _, motor in pairs(character:GetDescendants()) do
-            if motor:IsA("Motor6D") then
-                motor.Transform = CFrame.new()
-            end
-        end
-    end
+    print("Flight UI State Changed:", state)
+    -- Your backend tool can insert separate flight system here
 end)
 
----------------------------------------------------------
--- NOCLIP SEPARATE TOGGLE
----------------------------------------------------------
-local noclipEnabled = false
-local noclipConnection = nil
-
+-- 4. Noclip Toggle
 createModernToggle("NoclipToggle", "Enable Noclip (No Walls)", 4, function(state)
-    noclipEnabled = state
-    if noclipEnabled then
-        noclipConnection = RunService.Stepped:Connect(function()
-            if player.Character then
-                for _, part in pairs(player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end)
-    else
-        if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
-        if player.Character then
-            for _, part in pairs(player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-        end
-    end
-end)
-
--- Structural setup for character spawns
-player.CharacterAdded:Connect(function(char)
-    task.wait(0.5)
-    if speedEnabled and char:FindFirstChildOfClass("Humanoid") then
-        char:FindFirstChildOfClass("Humanoid").WalkSpeed = targetSpeed
-    end
+    print("Noclip UI State Changed:", state)
+    -- Your backend tool can insert separate noclip loop here
 end)
