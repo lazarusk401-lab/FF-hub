@@ -244,7 +244,7 @@ minimizeButton.Activated:Connect(minimizeToCircle)
 quickToggleBtn.Activated:Connect(restoreFromCircle)
 
 ---------------------------------------------------------
--- TOGGLE & SLIDER CREATION LOGIC
+-- TOGGLE & FIXED SLIDER CREATION LOGIC
 ---------------------------------------------------------
 local events = {
     WalkSpeedToggle = Instance.new("BindableEvent"),
@@ -317,7 +317,7 @@ local function createModernToggle(name, text, layoutOrder)
     return container, btn
 end
 
--- Helper function to generate an active visual slider bar matching your styling
+-- Fixed visual slider construction with explicit frame boundaries
 local function createModernSlider(name, text, layoutOrder)
     local container = Instance.new("Frame")
     container.Name = name .. "Container"
@@ -336,16 +336,16 @@ local function createModernSlider(name, text, layoutOrder)
     label.TextColor3 = Color3.fromRGB(220, 220, 220)
     label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Size = UDim2.new(0.4, 0, 1, 0)
+    label.Size = UDim2.new(0, 120, 1, 0)
     label.Position = UDim2.new(0, 12, 0, 0)
     label.BackgroundTransparency = 1
     label.Parent = container
 
-    -- The slider background line track
+    -- Slider Track Backplate (Fixed position coordinates)
     local sliderTrack = Instance.new("TextButton")
     sliderTrack.Name = name
-    sliderTrack.Size = UDim2.new(0.5, 0, 0, 6)
-    sliderTrack.Position = UDim2.new(1, -185, 0.5, -3)
+    sliderTrack.Size = UDim2.new(1, -160, 0, 6)
+    sliderTrack.Position = UDim2.new(0, 140, 0.5, -3)
     sliderTrack.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
     sliderTrack.Text = ""
     sliderTrack.AutoButtonColor = false
@@ -355,10 +355,9 @@ local function createModernSlider(name, text, layoutOrder)
     trackCorner.CornerRadius = UDim.new(0, 3)
     trackCorner.Parent = sliderTrack
 
-    -- Filled progress tracking bar
     local sliderFill = Instance.new("Frame")
     sliderFill.Name = "Fill"
-    sliderFill.Size = UDim2.new(0, 0, 1, 0)
+    sliderFill.Size = UDim2.new(0.2, 0, 1, 0) -- Starts at 20% value filled
     sliderFill.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
     sliderFill.BorderSizePixel = 0
     sliderFill.Parent = sliderTrack
@@ -367,11 +366,10 @@ local function createModernSlider(name, text, layoutOrder)
     fillCorner.CornerRadius = UDim.new(0, 3)
     fillCorner.Parent = sliderFill
 
-    -- Grab Knob button
     local sliderKnob = Instance.new("Frame")
     sliderKnob.Name = "Knob"
     sliderKnob.Size = UDim2.new(0, 14, 0, 14)
-    sliderKnob.Position = UDim2.new(0, -7, 0.5, -7)
+    sliderKnob.Position = UDim2.new(0.2, -7, 0.5, -7)
     sliderKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     sliderKnob.BorderSizePixel = 0
     sliderKnob.Parent = sliderTrack
@@ -382,10 +380,9 @@ local function createModernSlider(name, text, layoutOrder)
 
     local valueObj = Instance.new("NumberValue")
     valueObj.Name = "Value"
-    valueObj.Value = 0
+    valueObj.Value = 0.2
     valueObj.Parent = sliderTrack
 
-    -- Dynamic Slide Function tracking calculations
     local sliding = false
     
     local function snapToMouse()
@@ -428,7 +425,7 @@ end
 local walkSpeedContainer, walkSpeedToggleBtn = createModernToggle("WalkSpeedToggle", "Enable Custom Walkspeed", 2)
 walkSpeedContainer.Parent = mainContent
 
-local walkSpeedSliderContainer, walkSpeedSliderBtn = createModernSlider("WalkSpeedSlider", "Walkspeed Factor", 3)
+local walkSpeedSliderContainer, walkSpeedSliderBtn = createModernSlider("WalkSpeedSlider", "Speed Value", 3)
 walkSpeedSliderContainer.Parent = mainContent
 
 local walkSpeedToggle = { ValueChanged = events.WalkSpeedToggle.Event }
@@ -450,11 +447,11 @@ local sliderMT = setmetatable(walkSpeedSlider, {
     end
 })
 
-local currentSpeedMultiplier = 16
+local currentSpeedMultiplier = 32
 
 local function updateWalkSpeed()
     local character = player.Character or player.CharacterAdded:Wait()
-    local humanoid = character:WaitForChild("Humanoid")
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not humanoid then return end
     
     if walkSpeedToggleBtn.Value.Value then
@@ -478,14 +475,20 @@ local function toggleWalkSpeed()
 end
 
 walkSpeedSlider.ValueChanged:Connect(function(percentage)
-    currentSpeedMultiplier = 16 + (percentage * 100) -- Slider scales speed from default 16 up to 116
+    currentSpeedMultiplier = 16 + (percentage * 150) -- Scales up to 166 walkspeed max
     updateWalkSpeed()
 end)
 
 walkSpeedToggle.ValueChanged:Connect(toggleWalkSpeed)
 
+-- Keep character speed linked when respawning
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    updateWalkSpeed()
+end)
+
 ---------------------------------------------------------
--- FEATURE 2: FLY BINDINGS (Fixed Physics Velocity Engine)
+-- FEATURE 2: FLY BINDINGS (Stable Anchor Engine)
 ---------------------------------------------------------
 local flySpeedContainer, flySpeedToggleBtn = createModernToggle("FlySpeedToggle", "Noclip Fly Activation", 4)
 flySpeedContainer.Parent = mainContent
@@ -496,48 +499,56 @@ local flyMT = setmetatable(flySpeedToggle, {
     __newindex = function(t, k, v) if k == "Value" then flySpeedToggleBtn.Value.Value = v end end
 })
 
-local bodyVelocityInstance = nil
+local bodyPosInstance = nil
+local bodyGyroInstance = nil
 local flyConnection = nil
 
 local function toggleFlySpeed()
     local character = player.Character or player.CharacterAdded:Wait()
     if not character then return end
     local rootPart = character:WaitForChild("HumanoidRootPart")
-    local humanoid = character:WaitForChild("Humanoid")
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not rootPart or not humanoid then return end
     
     local flySpeedOn = flySpeedToggleBtn.Value.Value
     
     if flySpeedOn then
-        -- Construct standard high-grade linear velocity constraints to enforce flight paths
-        bodyVelocityInstance = Instance.new("BodyVelocity")
-        bodyVelocityInstance.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-        bodyVelocityInstance.Velocity = Vector3.new(0, 0, 0)
-        bodyVelocityInstance.Parent = rootPart
+        -- Stable alternative anchor parameters for executor compatibility
+        bodyPosInstance = Instance.new("BodyPosition")
+        bodyPosInstance.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+        bodyPosInstance.Position = rootPart.Position
+        bodyPosInstance.Parent = rootPart
         
-        -- Route keyboard directional paths instantly into movement loops
+        bodyGyroInstance = Instance.new("BodyGyro")
+        bodyGyroInstance.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+        bodyGyroInstance.CFrame = rootPart.CFrame
+        bodyGyroInstance.Parent = rootPart
+        
         flyConnection = RunService.RenderStepped:Connect(function()
             local camera = workspace.CurrentCamera
             local moveDirection = humanoid.MoveDirection
-            local upVector = Vector3.new(0, 0, 0)
+            local upVector = 0
             
             if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                upVector = Vector3.new(0, 1, 0)
+                upVector = 1
             elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-                upVector = Vector3.new(0, -1, 0)
+                upVector = -1
             end
             
-            bodyVelocityInstance.Velocity = (moveDirection * 50) + (upVector * 35)
-            rootPart.CanCollide = false
+            -- Lock camera angles into movement trajectory vectors
+            bodyGyroInstance.CFrame = camera.CFrame
+            bodyPosInstance.Position = bodyPosInstance.Position + (moveDirection * 1.5) + Vector3.new(0, upVector * 1.2, 0)
+            
+            -- Enforce zero-gravity hovering states smoothly
+            rootPart.Velocity = Vector3.new(0, 0, 0)
         end)
         
         TweenService:Create(flySpeedToggleBtn.Dot, TWEEN_INFO, {Position = UDim2.new(1, -19, 0.5, -8)}):Play()
         TweenService:Create(flySpeedToggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(0, 150, 255)}):Play()
     else
-        -- Completely teardown structures on fly disable
         if flyConnection then flyConnection:Disconnect() flyConnection = nil end
-        if bodyVelocityInstance then bodyVelocityInstance:Destroy() bodyVelocityInstance = nil end
-        rootPart.CanCollide = true
+        if bodyPosInstance then bodyPosInstance:Destroy() bodyPosInstance = nil end
+        if bodyGyroInstance then bodyGyroInstance:Destroy() bodyGyroInstance = nil end
         
         TweenService:Create(flySpeedToggleBtn.Dot, TWEEN_INFO, {Position = UDim2.new(0, 3, 0.5, -8)}):Play()
         TweenService:Create(flySpeedToggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(48, 48, 60)}):Play()
@@ -546,15 +557,7 @@ end
 
 flySpeedToggle.ValueChanged:Connect(toggleFlySpeed)
 
--- Style interactions for top bar close button
-minimizeButton.MouseEnter:Connect(function()
-    TweenService:Create(minimizeButton, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(230, 60, 60), TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-end)
-minimizeButton.MouseLeave:Connect(function()
-    TweenService:Create(minimizeButton, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(40, 40, 50), TextColor3 = Color3.fromRGB(200, 200, 200)}):Play()
-end)
-
 -- Initialize values cleanly
 toggleMT.Value = false
 flyMT.Value = false
-sliderMT.Value = 0.2 -- Default initialization index value
+sliderMT.Value = 0.2
