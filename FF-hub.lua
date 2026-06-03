@@ -1,170 +1,111 @@
--- Hub Script
+-- Universal Settings Tab
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
--- Settings for the Hub
-local settings = {
-    BackgroundColor = Color3.new(1, 0, 0),
-    MinimizeButtonPosition = Enum.UserInputState.Button1,
-    MinimizeButtonIcon = "rbxassetid://",
-    HubSize = UDim2.new(0, 300),
-    HubSpacing = UDim2.new(0, 10)
-}
+local settingsTab = Instance.new("ScreenGui")
+settingsTab.Name = "Settings"
+settingsTab.Parent = game.Players.LocalPlayer.PlayerGui
 
--- UI Components
-local Background = Instance.new("Frame")
-Background.Name = "HubBG"
-Background.BackgroundColor3 = settings.BackgroundColor
-Background.BackgroundTransparency = 0.2
-Background.Size = settings.HubSize
-Background.Position = UDim2.new(0, 0)
-Background.Parent = game.Workspace
+local tabLayout = Instance.new("Frame")
+tabLayout.Name = "TabLayout"
+tabLayout.BackgroundTransparency = 0
+tabLayout.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+tabLayout.Size = UDim2.new(0, 300, 0, 100)
+tabLayout.Position = UDim2.new(0.5, -150, 1, -40)
+tabLayout.zIndexBehavior = Enum.ZIndexBehavior.SortsLast
+settingsTab.ChildAdded:Connect(function(child) if child.Name == "Settings" then tabLayout.Enabled = true end )
+tabLayout.Parent = settingsTab
 
-local Overlay = Instance.new("ScreenGui")
-Overlay.Name = "HubOV"
-Overlay.Parent = game.Players.LocalPlayer.PlayerGui
-Overlay.ScreenTransparent = true
-OverlayBackgroundTransparency = 0.8
+local tabTitle = Instance.new("Text")
+tabTitle.Name = "TabTitle"
+tabTitle.BackgroundTransparency = 0
+tabTitle.Color = Color3.fromRGB(100, 100, 100)
+tabTitle.FontSize = Enum.FontSize.SizeXxl
+tabTitle.Text = "Settings"
+tabTitle.Font = Enum.FontSourceArialBold
+tabTitle.Parent = tabLayout
 
-local MinimizeButton = Instance.new("Text")
-MinimizeButton.Name = "MinimizeButton"
-MinimizeButton.Text = ""
-MinimizeButton.Font = EnumFontStyleRegular
-MinimizeButton.TextColor3 = Color3.new(1, 1, 1)
-MinimizeButton.TextSize = 14
-MinimizeButton.TextXAlign = Enum.FontTextEnforcementAlignment.Left
-MinimizeButton.TextYScale = Enum.FontTextEnforcementScaling.SCALE100
-MinimizeButton.Size = UDim2.new(0, 40, 0, 20)
-MinimizeButton.BackgroundTransparency = 1
-MinimizeButton.Position = Enum.new("Position")
-MinimizeButton.Parent = Overlay
-
-local CloseButton = Instance.new("Text")
-CloseButton.Name = "Close"
-CloseButton.Text = ""
-CloseButton.Font = EnumFontStyleRegular
-CloseButton.TextColor3 = Color3.new(1, 1, 1)
-CloseButton.TextSize = 14
-CloseButton.TextXAlign = Enum.FontTextEnforcementAlignment.Right
-CloseButton.TextYScale = Enum.FontTextEnforcementScaling.SCALE100
-CloseButton.Size = UDim2.new(0, 40, 0, 20)
-CloseButton.BackgroundTransparency = 1
-CloseButton.Position = Enum.new("Position")
-CloseButton.Parent = Overlay
-
--- Draggable Variables
-local isDragging = false
-local offset = UDim2.new(0, 0, 0, 0)
-
--- Event Listeners
-game:GetService("UserInputService").InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        -- Start dragging the Hub
-        isDragging = true
-    end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if isDragging then
-        -- Update drag offset
-        offset = UDim2.new(0, input.Position.X - settings.HubSpacing.X, 0, input.Position.Y - settings.HubSpacing.Y)
-        Background.Position = UDim2.new(0, (offset.X + settings.HubSize.X).Value, 0, (offset.Y + settings.HubSize.Y).Value)
-    end
-end)
-
-game:GetService("UserInputService").InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        -- Stop dragging the Hub
-        isDragging = false
-    end
-end)
-
-MinimizeButton.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.Minus then
-        -- Minimize the Hub
-        if Overlay:FindFirstChild("Close") then
-            CloseButton:Destroy()
-        else
-            local closeScript = Instance.new("Script")
-            closeScript.Parent = overlay
-            closeScript.Name = "Close"
-            closeScript.Source = [[
-                local function OnClick()
-                    -- Close the Hub
-                    overlay:Destroy()
-                end
-                game:GetService("RunService").RenderStepped:Connect(OnClick)
-            ]]
-        end
-    end
-end)
-
-MinimizeButton.InputEnded:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.Minus then
-        -- Reset Minimize Button
-        local buttonScript = Instance.new("Script")
-        buttonScript.Parent = overlay
-        buttonScript.Name = "MinimizeButton"
-        buttonScript.Source = [[
-            local function OnClick()
-                -- Show the Minimize Button
-                MinimizeButton:Destroy()
-                local newButton = Instance.new("Text")
-                newButton.Text = ""
-                newButton.Font = EnumFontStyleRegular
-                newButton.TextColor3 = Color3.new(1, 1, 1)
-                newButton.TextSize = 14
-                newButton.TextXAlign = Enum.FontTextEnforcementAlignment.Left
-                newButton.TextYScale = Enum.FontTextEnforcementScaling.SCALE100
-                newButton.Size = UDim2.new(0, 40, 0, 20)
-                newButton.BackgroundTransparency = 1
-                newButton.Position = Enum.new("Position")
-                overlay:WaitForChild("MinimizeButton").Parent = overlay
-            end
-            game:GetService("RunService").RenderStepped:Connect(OnClick)
-        ]]
-    end
-end)
-
--- Minimize Button Script
-local function OnClick()
-    -- Close the Hub
-    Overlay:Destroy()
+local function toggleTab()
+    if tabLayout.Enabled then tabLayout.Enabled = false else tabLayout.Enabled = true end
 end
 
-overlay:WaitForChild("Close"):GetPropertyChangedSignal("Parent"):Connect(function(parent)
-    if parent == nil then
-        local closeScript = Instance.new("Script")
-        closeScript.Parent = overlay
-        closeScript.Name = "Close"
-        closeScript.Source = [[
-            local function OnClick()
-                -- Close the Hub
-                overlay:Destroy()
-            end
-            game:GetService("RunService").RenderStepped:Connect(OnClick)
-        ]]
-    end
-end)
+settingsTab.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then toggleTab() end )
+UserInputService.InputBegan:Connect(function(input) if input.KeyCode == Enum.KeyCode.Space then toggleTab() end )
 
--- Close Button Script
-local function OnClick()
-    -- Close the Hub
-    Overlay:Destroy()
+-- Toggle Section
+local toggleSection = Instance.new("Frame")
+toggleSection.Name = "ToggleSection"
+toggleSection.BackgroundTransparency = 0
+toggleSection.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+toggleSection.Size = UDim2.new(1, -20, 0, 30)
+toggleSection.Position = UDim2.new(0.5, -100, 1, -40)
+toggleSection.zIndexBehavior = Enum.ZIndexBehavior.SortsLast
+settingsTab:FindFirstChild("ToggleSection") and toggleSection.Enabled = true or toggleSection.Enabled = false
+toggleSection.Parent = settingsTab
+
+local function toggleSpeed()
+    if settingsTab:FindFirstChild("speedToggle") then
+        settingsTab:FindFirstChild("speedToggle").Parent:Destroy()
+    end
+    local speedToggle = Instance.new("BoolProp")
+    speedToggle.Name = "speedToggle"
+    speedToggle.Value = false
+    speedToggle.Parent = toggleSection
+    local function onToggled() if speedToggle.Value then RunService.RenderStepped:Connect(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 20 end ) else game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Enum.HumanoidWalkSpeedNormal end
+    speedToggle.OnChanged:Connect(onToggled)
 end
 
-overlay:WaitForChild("Close"):GetPropertyChangedSignal("Text"):Connect(function(text)
-    if text == "" then
-        overlay:WaitForChild("Close").Parent = nil
-    end
-end)
+toggleSection.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then toggleSpeed() end )
+UserInputService.InputBegan:Connect(function(input) if input.KeyCode == Enum.KeyCode.Space then toggleSpeed() end )
 
--- Close Button Script
-local function OnClick()
-    -- Close the Hub
-    Overlay:Destroy()
+-- Slider Section
+local sliderSection = Instance.new("Frame")
+sliderSection.Name = "SliderSection"
+sliderSection.BackgroundTransparency = 0
+sliderSection.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+sliderSection.Size = UDim2.new(1, -20, 0, 30)
+sliderSection.Position = UDim2.new(0.5, -100, 1, -40)
+sliderSection.zIndexBehavior = Enum.ZIndexBehavior.SortsLast
+settingsTab:FindFirstChild("SliderSection") and sliderSection.Enabled = true or sliderSection.Enabled = false
+sliderSection.Parent = settingsTab
+
+local function toggleFly()
+    if settingsTab:FindFirstChild("flyToggle") then
+        settingsTab:FindFirstChild("flyToggle").Parent:Destroy()
+    end
+    local flyToggle = Instance.new("BoolProp")
+    flyToggle.Name = "flyToggle"
+    flyToggle.Value = false
+    flyToggle.Parent = toggleSection
+    local function onToggled() if flyToggle.Value then game.Players.LocalPlayer.Character.HumanoidRootPart.Anchored = false end else game.Players.LocalPlayer.Character.HumanoidRootPart.Anchored = true end
+    flyToggle.OnChanged:Connect(onToggled)
 end
 
-overlay:WaitForChild("MinimizeButton"):GetPropertyChangedSignal("Parent"):Connect(function(parent)
-    if parent == nil then
-        overlay:WaitForChild("Close").Parent = overlay
+toggleSection.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then toggleFly() end )
+UserInputService.InputBegan:Connect(function(input) if input.KeyCode == Enum.KeyCode.Space then toggleFly() end )
+
+-- FlySpeed Section
+local flySpeedSection = Instance.new("Frame")
+flySpeedSection.Name = "FlySpeedSection"
+flySpeedSection.BackgroundTransparency = 0
+flySpeedSection.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+flySpeedSection.Size = UDim2.new(1, -20, 0, 30)
+flySpeedSection.Position = UDim2.new(0.5, -100, 1, -40)
+flySpeedSection.zIndexBehavior = Enum.ZIndexBehavior.SortsLast
+settingsTab:FindFirstChild("FlySpeedSection") and flySpeedSection.Enabled = true or flySpeedSection.Enabled = false
+flySpeedSection.Parent = settingsTab
+
+local function toggleFlySpeed()
+    if settingsTab:FindFirstChild("FlySpeedToggle") then
+        settingsTab:FindFirstChild("FlySpeedToggle").Parent:Destroy()
     end
-end)
+    local FlySpeedToggle = Instance.new("Slider")
+    FlySpeedToggle.Name = "FlySpeedToggle"
+    FlySpeedToggle.MaxValue = 10
+    FlySpeedToggle.MinValue = -10
+    FlySpeedToggle.Value = 0
+    FlySpeedToggle.Parent = flySpeedSection
+end
+
+toggleSection.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then toggleFlySpeed() end )
+UserInputService.InputBegan:Connect(function(input) if input.KeyCode == Enum.KeyCode.Space then toggleFlySpeed() end )
