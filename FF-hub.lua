@@ -19,6 +19,7 @@ tabLayout.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 tabLayout.BorderSizePixel = 0
 tabLayout.Size = UDim2.new(0, 320, 0, 240)
 tabLayout.Position = UDim2.new(0.5, -160, 0.5, -120) -- Perfectly centered
+
 -- Rounded corners for a modern look
 local uiCorner = Instance.new("UICorner")
 uiCorner.CornerRadius = UDim.new(0, 8)
@@ -56,119 +57,132 @@ local function toggleMenu()
     tabLayout.Visible = not tabLayout.Visible
 end
 
--- Toggles menu when 'M' key is pressed ('Space' would break jumping)
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end -- Don't trigger while typing in chat
-    if input.KeyCode == Enum.KeyCode.M then 
-        toggleMenu() 
+-- Toggles menu when 'M' key is pressed
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.M then
+        toggleMenu()
     end
 end)
 
 ---------------------------------------------------------
 -- FEATURE 1: WALK SPEED TOGGLE
 ---------------------------------------------------------
-local speedButton = Instance.new("TextButton")
-speedButton.Name = "SpeedButton"
-speedButton.Size = UDim2.new(0, 280, 0, 45)
-speedButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-speedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-speedButton.Text = "WalkSpeed: Default (16)"
-speedButton.Font = Enum.Font.SourceSans
-speedButton.TextSize = 18
-speedButton.LayoutOrder = 2
-local btnCorner1 = Instance.new("UICorner")
-btnCorner1.CornerRadius = UDim.new(0, 6)
-btnCorner1.Parent = speedButton
-speedButton.Parent = tabLayout
-
-local speedToggled = false
-local speedConnection = nil
-
-local function toggleSpeed()
-    local character = player.Character or player.CharacterAdded:Wait()
+local function toggleWalkSpeed()
+    local character = player.Character or player.CharacterAdded
     local humanoid = character:WaitForChild("Humanoid")
     
-    speedToggled = not speedToggled
+    if not humanoid then return end
     
-    if speedToggled then
-        speedButton.Text = "WalkSpeed: Fast (50)"
-        speedButton.BackgroundColor3 = Color3.fromRGB(0, 140, 70) -- Green
+    -- Toggle value here (true/false)
+    local walkSpeedOn = false
+    
+    -- Update speed
+    if walkSpeedOn then
+        humanoid.WalkSpeed = 50
+        tabLayout:FindFirstChild("WalkSpeedSlider").Value = 1
+    else
+        humanoid.WalkSpeed = 16
+        tabLayout:FindFirstChild("WalkSpeedSlider").Value = 0
+    end
+    
+    -- Update toggle button text and color
+    tabLayout:FindFirstChild("WalkSpeedToggle").Text = tostring(walkSpeedOn)
+    if walkSpeedOn then
+        tabLayout:FindFirstChild("WalkSpeedToggle").BackgroundColor3 = Color3.fromRGB(180, 40, 40) -- Red
+    else
+        tabLayout:FindFirstChild("WalkSpeedToggle").BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    end
+end
+
+local walkSpeedSlider = Instance.new("Slider")
+walkSpeedSlider.Name = "WalkSpeedSlider"
+walkSpeedSlider.Parent = tabLayout
+walkSpeedSlider.ValueChanged:Connect(function(value)
+    local character = player.Character or player.CharacterAdded
+    local humanoid = character:WaitForChild("Humanoid")
+    
+    if humanoid then
+        -- Get old speed value
+        local oldSpeedValue = humanoid.WalkSpeed
         
-        -- Keeps speed forced to 50 even if the game tries to reset it
-        speedConnection = RunService.RenderStepped:Connect(function()
-            if character and humanoid then
-                humanoid.WalkSpeed = 50
+        -- Set new speed value
+        humanoid.WalkSpeed = 16 + (value * 34)
+        
+        -- Update humanoids walk speed to be smooth and not stutter
+        RunService.RenderStepped:Connect(function()
+            if humanoid then
+                humanoid.WalkSpeed = lerp(oldSpeedValue, humanoid.WalkSpeed, 1 / 60)
             end
         end)
-    else
-        speedButton.Text = "WalkSpeed: Default (16)"
-        speedButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-        if speedConnection then 
-            speedConnection:Disconnect() 
-            speedConnection = nil
-        end
-        humanoid.WalkSpeed = 16
     end
-end
+end)
 
-speedButton.MouseButton1Click:Connect(toggleSpeed)
+local walkSpeedToggle = Instance.new(" Toggle")
+walkSpeedToggle.Name = "WalkSpeedToggle"
+walkSpeedToggle.Parent = tabLayout
+walkSpeedToggle.ValueChanged:Connect(toggleWalkSpeed)
 
 ---------------------------------------------------------
--- FEATURE 2: FREEZE/FLY TOGGLE
+-- FEATURE 2: FLY SPEED TOGGLE
 ---------------------------------------------------------
-local freezeButton = Instance.new("TextButton")
-freezeButton.Name = "FreezeButton"
-freezeButton.Size = UDim2.new(0, 280, 0, 45)
-freezeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-freezeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-freezeButton.Text = "Freeze Position: OFF"
-freezeButton.Font = Enum.Font.SourceSans
-freezeButton.TextSize = 18
-freezeButton.LayoutOrder = 3
-local btnCorner2 = Instance.new("UICorner")
-btnCorner2.CornerRadius = UDim.new(0, 6)
-btnCorner2.Parent = freezeButton
-freezeButton.Parent = tabLayout
-
-local isAnchored = false
-
-local function toggleFreeze()
-    local character = player.Character
+local function toggleFlySpeed()
+    local character = player.Character or player.CharacterAdded
+    
     if not character then return end
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
     
-    isAnchored = not isAnchored
-    hrp.Anchored = isAnchored
+    -- Toggle value here (true/false)
+    local flySpeedOn = false
     
-    if isAnchored then
-        freezeButton.Text = "Freeze Position: ON"
-        freezeButton.BackgroundColor3 = Color3.fromRGB(180, 40, 40) -- Red
+    -- Update speed
+    if flySpeedOn then
+        character:WaitForChild(" humanoidRootPart").CanCollide = false
     else
-        freezeButton.Text = "Freeze Position: OFF"
-        freezeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        character:WaitForChild("humanoidRootPart").CanCollide = true
+    end
+    
+    -- Update toggle button text and color
+    tabLayout:FindFirstChild("FlySpeedToggle").Text = tostring(flySpeedOn)
+    if flySpeedOn then
+        tabLayout:FindFirstChild("FlySpeedToggle").BackgroundColor3 = Color3.fromRGB(180, 40, 40) -- Red
+    else
+        tabLayout:FindFirstChild("FlySpeedToggle").BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     end
 end
 
-freezeButton.MouseButton1Click:Connect(toggleFreeze)
+local flySpeedToggle = Instance.new(" Toggle")
+flySpeedToggle.Name = "FlySpeedToggle"
+flySpeedToggle.Parent = tabLayout
+flySpeedToggle.ValueChanged:Connect(toggleFlySpeed)
 
 ---------------------------------------------------------
--- FEATURE 3: CHAT NOTIFICATION INFO
+-- FEATURE 3: MINIMIZE BUTTON
 ---------------------------------------------------------
-local infoLabel = Instance.new("TextLabel")
-infoLabel.Name = "InfoLabel"
-infoLabel.BackgroundTransparency = 1
-infoLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-infoLabel.TextSize = 14
-infoLabel.Text = "Press 'M' to hide/show this menu"
-infoLabel.Font = Enum.Font.SourceSansItalic
-infoLabel.Size = UDim2.new(1, 0, 0, 25)
-infoLabel.LayoutOrder = 4
-infoLabel.Parent = tabLayout
+local function minimizeSettings()
+    settingsTab.Visible = not settingsTab.Visible
+end
 
--- Let the player know it loaded successfully
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Settings Loaded",
-    Text = "Press M to toggle the interface.",
-    Duration = 5
-})
+local minimizeButton = Instance.new("Frame")
+minimizeButton.Name = "MinimizeButton"
+minimizeButton.Size = UDim2.new(0, 100, 0, 20)
+minimizeButton.Position = UDim2.new(1, -10, 0.8, 0)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.Parent = tabLayout
+
+local minimizeText = Instance.new("TextLabel")
+minimizeText.Name = "MinimizeText"
+minimizeText.Text = "+"
+minimizeText.Font = Enum.Font.SourceSans
+minimizeText.Size = UDim2.new(0, 20, 1, 0)
+minimizeText.Parent = minimizeButton
+
+local function onActivate()
+    if settingsTab then
+        settingsTab:Destroy()
+    end
+end
+
+minimizeButton.Activated:Connect(onActivate)
+
+-- Initialize the UI
+tabLayout:FindFirstChild("WalkSpeedToggle").Value = false
+tabLayout:FindFirstChild("FlySpeedToggle").Value = false
