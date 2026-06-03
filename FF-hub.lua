@@ -2,7 +2,7 @@
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService") -- Added for smooth animations
+local TweenService = game:GetService("TweenService") 
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -17,14 +17,13 @@ settingsTab.ResetOnSpawn = false
 settingsTab.Parent = playerGui
 
 -- 2. Main Layout Frame (The Menu Panel)
--- Upgraded to CanvasGroup so we can smoothly fade the entire UI in and out
 local tabLayout = Instance.new("CanvasGroup")
 tabLayout.Name = "TabLayout"
-tabLayout.BackgroundColor3 = Color3.fromRGB(15, 15, 20) -- Sleek midnight dark
+tabLayout.BackgroundColor3 = Color3.fromRGB(15, 15, 20) 
 tabLayout.BorderSizePixel = 0
-tabLayout.Size = UDim2.new(0, 340, 0, 320) -- Adjusted for better breathing room
+tabLayout.Size = UDim2.new(0, 340, 0, 320) 
 tabLayout.Position = UDim2.new(0.5, -170, 0.5, -160) 
-tabLayout.GroupTransparency = 0 -- Start visible
+tabLayout.GroupTransparency = 0 
 
 -- Premium rounded corners
 local uiCorner = Instance.new("UICorner")
@@ -47,13 +46,13 @@ shadow.AnchorPoint = Vector2.new(0.5, 0.5)
 shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
 shadow.Size = UDim2.new(1, 30, 1, 30)
 shadow.BackgroundTransparency = 1
-shadow.Image = "rbxassetid://6015897843" -- Smooth engine shadow asset
+shadow.Image = "rbxassetid://6015897843" 
 shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
 shadow.ImageTransparency = 0.5
 shadow.ZIndex = 0
 shadow.Parent = tabLayout
 
--- Automatically stacks buttons vertically with 12px spacing
+-- Automatically stacks buttons vertically
 local uiListLayout = Instance.new("UIListLayout")
 uiListLayout.Padding = UDim.new(0, 12)
 uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -74,14 +73,14 @@ tabTitle.BackgroundTransparency = 1
 tabTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 tabTitle.TextSize = 20
 tabTitle.Text = "Universal Settings"
-tabTitle.Font = Enum.Font.GothamBold -- Upgraded to cleaner Gotham font
+tabTitle.Font = Enum.Font.GothamBold 
 tabTitle.TextXAlignment = Enum.TextXAlignment.Left
 tabTitle.Size = UDim2.new(1, 0, 0, 25)
 tabTitle.LayoutOrder = 1
 tabTitle.Parent = tabLayout
 
--- Custom helper to build standard, gorgeous UI buttons easily
-local function createModernButton(name, text, layoutOrder)
+-- Helper function to generate working toggle components safely
+local function createModernToggle(name, text, layoutOrder)
     local btn = Instance.new("TextButton")
     btn.Name = name
     btn.Size = UDim2.new(1, 0, 0, 42)
@@ -103,42 +102,47 @@ local function createModernButton(name, text, layoutOrder)
     btnStroke.Transparency = 0.9
     btnStroke.Parent = btn
 
-    -- Smooth Hover and Press Animations
+    -- Critical Execution Fix: Simulating the custom properties/events your script expects
+    local valueObj = Instance.new("BoolValue")
+    valueObj.Name = "Value"
+    valueObj.Parent = btn
+
+    local changedEvent = Instance.new("BindableEvent")
+    changedEvent.Name = "ValueChanged"
+    changedEvent.Parent = btn
+
+    -- Redirecting custom environment indexing so script features don't crash
+    local fakeRef = setmetatable({}, {
+        __index = function(_, key)
+            if key == "Value" then return valueObj.Value
+            elseif key == "ValueChanged" then return changedEvent.Event
+            else return btn[key] end
+        end,
+        __newindex = function(_, key, val)
+            if key == "Value" then 
+                valueObj.Value = val
+                changedEvent:Fire(val)
+            else btn[key] = val end
+        end
+    })
+
+    -- Hover Animations
     btn.MouseEnter:Connect(function()
         TweenService:Create(btn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(40, 40, 55)}):Play()
         TweenService:Create(btnStroke, TWEEN_INFO, {Transparency = 0.7}):Play()
     end)
     btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(30, 30, 40)}):Play()
+        if not valueObj.Value then
+            TweenService:Create(btn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(30, 30, 40)}):Play()
+        end
         TweenService:Create(btnStroke, TWEEN_INFO, {Transparency = 0.9}):Play()
     end)
-    btn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0.98, 0, 0, 40)}):Play()
-        end
-    end)
-    btn.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(1, 0, 0, 42)}):Play()
-        end
-    end)
 
-    -- Custom Value Property to mimic the AI's intended behavior safely
-    local valObj = Instance.new("BoolValue")
-    valObj.Name = "Value"
-    valObj.Parent = btn
-
-    -- Custom BindableEvent to simulate ValueChanged safely
-    local changedEvent = Instance.new("BindableEvent")
-    changedEvent.Name = "ValueChanged"
-    changedEvent.Parent = btn
-    
     btn.Activated:Connect(function()
-        valObj.Value = not valObj.Value
-        changedEvent:Fire(valObj.Value)
+        fakeRef.Value = not valueObj.Value
     end)
 
-    return btn
+    return btn, fakeRef
 end
 
 ---------------------------------------------------------
@@ -159,7 +163,6 @@ local function toggleMenu()
     end
 end
 
--- Toggles menu when 'M' key is pressed
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.M then
         toggleMenu()
@@ -169,68 +172,76 @@ end)
 ---------------------------------------------------------
 -- FEATURE 1: WALK SPEED TOGGLE
 ---------------------------------------------------------
+-- Instantiating elements directly into the tree first so FindFirstChild doesn't fail
+local walkSpeedToggleBtn, walkSpeedToggle = createModernToggle("WalkSpeedToggle", "Walkspeed: OFF", 2)
+walkSpeedToggleBtn.Parent = tabLayout
+
+-- Re-engineering slider structure into a valid script instance layout
+local walkSpeedSliderBtn = Instance.new("Frame")
+walkSpeedSliderBtn.Name = "WalkSpeedSlider"
+walkSpeedSliderBtn.Size = UDim2.new(1, 0, 0, 12)
+walkSpeedSliderBtn.BackgroundTransparency = 1
+walkSpeedSliderBtn.LayoutOrder = 3
+walkSpeedSliderBtn.Parent = tabLayout
+
+local sliderValueObj = Instance.new("NumberValue")
+sliderValueObj.Name = "Value"
+sliderValueObj.Parent = walkSpeedSliderBtn
+
+local sliderChangedEvent = Instance.new("BindableEvent")
+sliderChangedEvent.Name = "ValueChanged"
+sliderChangedEvent.Parent = walkSpeedSliderBtn
+
+local walkSpeedSlider = setmetatable({}, {
+    __index = function(_, key)
+        if key == "Value" then return sliderValueObj.Value
+        elseif key == "ValueChanged" then return sliderChangedEvent.Event
+        else return walkSpeedSliderBtn[key] end
+    end,
+    __newindex = function(_, key, val)
+        if key == "Value" then 
+            sliderValueObj.Value = val
+            sliderChangedEvent:Fire(val)
+        else walkSpeedSliderBtn[key] = val end
+    end
+})
+
 local function toggleWalkSpeed()
-    local character = player.Character or player.CharacterAdded
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoid = character:WaitForChild("Humanoid")
-    
     if not humanoid then return end
     
-    -- Toggle value here (true/false)
-    local walkSpeedOn = tabLayout:FindFirstChild("WalkSpeedToggle").Value.Value
+    local walkSpeedOn = walkSpeedToggle.Value
     
-    -- Update speed
     if walkSpeedOn then
         humanoid.WalkSpeed = 50
-        tabLayout:FindFirstChild("WalkSpeedSlider").Value = 1
+        walkSpeedSlider.Value = 1
     else
         humanoid.WalkSpeed = 16
-        tabLayout:FindFirstChild("WalkSpeedSlider").Value = 0
+        walkSpeedSlider.Value = 0
     end
     
-    -- Update toggle button text and color with beautiful transitions
-    local toggleBtn = tabLayout:FindFirstChild("WalkSpeedToggle")
     if walkSpeedOn then
-        toggleBtn.Text = "Walkspeed: ON"
-        TweenService:Create(toggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(0, 170, 110)}):Play() -- Vibrant Teal Green
+        walkSpeedToggleBtn.Text = "Walkspeed: ON"
+        TweenService:Create(walkSpeedToggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(0, 170, 110)}):Play() 
     else
-        toggleBtn.Text = "Walkspeed: OFF"
-        TweenService:Create(toggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(30, 30, 40)}):Play()
+        walkSpeedToggleBtn.Text = "Walkspeed: OFF"
+        TweenService:Create(walkSpeedToggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(30, 30, 40)}):Play()
     end
 end
 
--- Re-engineered Slider Frame to safely support the script logic
-local walkSpeedSlider = Instance.new("Frame")
-walkSpeedSlider.Name = "WalkSpeedSlider"
-walkSpeedSlider.Size = UDim2.new(1, 0, 0, 10)
-walkSpeedSlider.BackgroundTransparency = 1
-walkSpeedSlider.LayoutOrder = 3
-walkSpeedSlider.Parent = tabLayout
-
-local sliderVal = Instance.new("NumberValue")
-sliderVal.Name = "Value"
-sliderVal.Parent = walkSpeedSlider
-
-local sliderEvent = Instance.new("BindableEvent")
-sliderEvent.Name = "ValueChanged"
-sliderEvent.Parent = walkSpeedSlider
-
--- Simple lerp implementation that your script requested
 local function lerp(a, b, t)
     return a + (b - a) * t
 end
 
 walkSpeedSlider.ValueChanged:Connect(function(value)
-    local character = player.Character or player.CharacterAdded
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoid = character:WaitForChild("Humanoid")
     
     if humanoid then
-        -- Get old speed value
         local oldSpeedValue = humanoid.WalkSpeed
-        
-        -- Set new speed value
         humanoid.WalkSpeed = 16 + (value * 34)
         
-        -- Update humanoids walk speed to be smooth and not stutter
         RunService.RenderStepped:Connect(function()
             if humanoid then
                 humanoid.WalkSpeed = lerp(oldSpeedValue, humanoid.WalkSpeed, 1 / 60)
@@ -239,53 +250,44 @@ walkSpeedSlider.ValueChanged:Connect(function(value)
     end
 end)
 
--- Created the dynamic WalkSpeed toggle button
-local walkSpeedToggle = createModernButton("WalkSpeedToggle", "Walkspeed: OFF", 2)
-walkSpeedToggle.Parent = tabLayout
 walkSpeedToggle.ValueChanged:Connect(toggleWalkSpeed)
 
 ---------------------------------------------------------
 -- FEATURE 2: FLY SPEED TOGGLE
 ---------------------------------------------------------
+local flySpeedToggleBtn, flySpeedToggle = createModernToggle("FlySpeedToggle", "Noclip Fly: OFF", 4)
+flySpeedToggleBtn.Parent = tabLayout
+
 local function toggleFlySpeed()
-    local character = player.Character or player.CharacterAdded
-    
+    local character = player.Character or player.CharacterAdded:Wait()
     if not character then return end
     
-    -- Toggle value here (true/false)
-    local flySpeedOn = tabLayout:FindFirstChild("FlySpeedToggle").Value.Value
+    local flySpeedOn = flySpeedToggle.Value
     
-    -- Update speed
-    if flySpeedOn then
-        character:WaitForChild("HumanoidRootPart").CanCollide = false -- Fixed capitalization typo from original script
-    else
-        character:WaitForChild("HumanoidRootPart").CanCollide = true
+    -- Fixed the internal typo from the original AI script (" humanoidRootPart")
+    local rootPart = character:WaitForChild("HumanoidRootPart")
+    if rootPart then
+        rootPart.CanCollide = not flySpeedOn
     end
     
-    -- Update toggle button text and color with beautiful transitions
-    local toggleBtn = tabLayout:FindFirstChild("FlySpeedToggle")
     if flySpeedOn then
-        toggleBtn.Text = "Noclip Fly: ON"
-        TweenService:Create(toggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(0, 170, 110)}):Play() -- Vibrant Teal Green
+        flySpeedToggleBtn.Text = "Noclip Fly: ON"
+        TweenService:Create(flySpeedToggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(0, 170, 110)}):Play() 
     else
-        toggleBtn.Text = "Noclip Fly: OFF"
-        TweenService:Create(toggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(30, 30, 40)}):Play()
+        flySpeedToggleBtn.Text = "Noclip Fly: OFF"
+        TweenService:Create(flySpeedToggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(30, 30, 40)}):Play()
     end
 end
 
--- Created the dynamic FlySpeed toggle button
-local flySpeedToggle = createModernButton("FlySpeedToggle", "Noclip Fly: OFF", 4)
-flySpeedToggle.Parent = tabLayout
 flySpeedToggle.ValueChanged:Connect(toggleFlySpeed)
 
 ---------------------------------------------------------
 -- FEATURE 3: MINIMIZE BUTTON
 ---------------------------------------------------------
--- Cleaned up the close button so it anchors uniformly at the bottom of the list
 local minimizeButton = Instance.new("TextButton")
 minimizeButton.Name = "MinimizeButton"
 minimizeButton.Size = UDim2.new(1, 0, 0, 35)
-minimizeButton.BackgroundColor3 = Color3.fromRGB(230, 60, 60) -- Slick modern crimson red
+minimizeButton.BackgroundColor3 = Color3.fromRGB(230, 60, 60) 
 minimizeButton.Font = Enum.Font.GothamBold
 minimizeButton.Text = "Destroy Menu"
 minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -308,7 +310,6 @@ minimizeButton.Parent = tabLayout
 
 local function onActivate()
     if settingsTab then
-        -- Fade animation before destroying completely
         local fadeTween = TweenService:Create(tabLayout, TWEEN_INFO, {GroupTransparency = 1, Size = UDim2.new(0, 300, 0, 280)})
         fadeTween:Play()
         fadeTween.Completed:Connect(function()
@@ -319,6 +320,6 @@ end
 
 minimizeButton.Activated:Connect(onActivate)
 
--- Initialize the UI
-tabLayout:FindFirstChild("WalkSpeedToggle").Value.Value = false
-tabLayout:FindFirstChild("FlySpeedToggle").Value.Value = false
+-- Initialize the UI safely without throwing error logs
+walkSpeedToggle.Value = false
+flySpeedToggle.Value = false
