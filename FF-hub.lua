@@ -8,7 +8,7 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- Animation Configuration
-local TWEEN_INFO = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local TWEEN_INFO = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 -- 1. Main ScreenGui Container
 local settingsTab = Instance.new("ScreenGui")
@@ -16,13 +16,14 @@ settingsTab.Name = "UniversalSettingsGui"
 settingsTab.ResetOnSpawn = false 
 settingsTab.Parent = playerGui
 
--- 2. Main Windows Frame (Solid colors to eliminate engine blackouts)
+-- 2. Main Windows Frame
 local tabLayout = Instance.new("Frame")
 tabLayout.Name = "TabLayout"
 tabLayout.BackgroundColor3 = Color3.fromRGB(24, 24, 30) 
 tabLayout.BorderSizePixel = 0
 tabLayout.Size = UDim2.new(0, 480, 0, 320) 
 tabLayout.Position = UDim2.new(0.5, -240, 0.5, -160) 
+tabLayout.ClipsDescendants = true -- Keeps animations clean
 
 local uiCorner = Instance.new("UICorner")
 uiCorner.CornerRadius = UDim.new(0, 8)
@@ -35,7 +36,7 @@ uiStroke.Parent = tabLayout
 
 tabLayout.Parent = settingsTab
 
--- 3. Top Banner (Branding & Minimize)
+-- 3. Top Banner (Branding, Dragging & Minimize)
 local topBar = Instance.new("Frame")
 topBar.Name = "TopBar"
 topBar.Size = UDim2.new(1, 0, 0, 35)
@@ -47,7 +48,6 @@ local topBarCorner = Instance.new("UICorner")
 topBarCorner.CornerRadius = UDim.new(0, 8)
 topBarCorner.Parent = topBar
 
--- Overlay to mask lower rounded corners
 local topBarLine = Instance.new("Frame")
 topBarLine.Size = UDim2.new(1, 0, 0, 5)
 topBarLine.Position = UDim2.new(0, 0, 1, -5)
@@ -98,7 +98,6 @@ sidePadding.PaddingLeft = UDim.new(0, 8)
 sidePadding.PaddingRight = UDim.new(0, 8)
 sidePadding.Parent = sideBar
 
--- Universal Tab Navigation Element
 local universalTabBtn = Instance.new("TextButton")
 universalTabBtn.Name = "UniversalTabButton"
 universalTabBtn.Size = UDim2.new(1, 0, 0, 32)
@@ -140,14 +139,132 @@ contentListLayout.Padding = UDim.new(0, 10)
 contentListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 contentListLayout.Parent = mainContent
 
--- Setup Custom Event Environment Handlers
+-- 6. Bottom-Right Minimize Circle Button
+local quickToggleBtn = Instance.new("TextButton")
+quickToggleBtn.Name = "QuickToggleButton"
+quickToggleBtn.Size = UDim2.new(0, 50, 0, 50)
+quickToggleBtn.Position = UDim2.new(1, -70, 1, -70) -- Bottom Right
+quickToggleBtn.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+quickToggleBtn.Text = "FF"
+quickToggleBtn.Font = Enum.Font.GothamBold
+quickToggleBtn.TextColor3 = Color3.fromRGB(0, 180, 255)
+quickToggleBtn.TextSize = 16
+quickToggleBtn.AutoButtonColor = false
+quickToggleBtn.Visible = false -- Starts hidden
+quickToggleBtn.Parent = settingsTab
+
+local qtCorner = Instance.new("UICorner")
+qtCorner.CornerRadius = UDim.new(1, 0) -- Circle shape
+qtCorner.Parent = quickToggleBtn
+
+local qtStroke = Instance.new("UIStroke")
+qtStroke.Thickness = 1.5
+qtStroke.Color = Color3.fromRGB(0, 180, 255)
+qtStroke.Parent = quickToggleBtn
+
+---------------------------------------------------------
+-- UI DRAGGING SYSTEM
+---------------------------------------------------------
+local dragging, dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    tabLayout.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+topBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = tabLayout.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+topBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+---------------------------------------------------------
+-- FLUID MINIMIZE / RESTORE SYSTEM
+---------------------------------------------------------
+local menuOpen = true
+local originalPosition = tabLayout.Position
+
+local function toggleMenu()
+    if not menuOpen then return end -- If minimized into a circle, only clicking the circle opens it
+    menuOpen = not menuOpen
+    tabLayout.Visible = menuOpen
+end
+
+-- Keybind toggle handler
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.M then
+        toggleMenu()
+    end
+end)
+
+-- Fluid Minimize to Circle Animation
+local function minimizeToCircle()
+    if not menuOpen then return end
+    menuOpen = false
+    originalPosition = tabLayout.Position -- Remember position right before minimization
+    
+    -- Target destination: Where the circle button stays
+    local targetPos = UDim2.new(1, -70, 1, -70)
+    
+    local animSize = TweenService:Create(tabLayout, TWEEN_INFO, {Size = UDim2.new(0, 50, 0, 50), Position = targetPos})
+    animSize:Play()
+    
+    animSize.Completed:Connect(function()
+        tabLayout.Visible = false
+        quickToggleBtn.Visible = true
+        quickToggleBtn.Size = UDim2.new(0, 10, 0, 10)
+        quickToggleBtn.Position = UDim2.new(1, -50, 1, -50)
+        TweenService:Create(quickToggleBtn, TWEEN_INFO, {Size = UDim2.new(0, 50, 0, 50), Position = UDim2.new(1, -70, 1, -70)}):Play()
+    end)
+end
+
+-- Fluid Restore from Circle Animation
+local function restoreFromCircle()
+    if menuOpen then return end
+    
+    quickToggleBtn.Visible = false
+    tabLayout.Visible = true
+    
+    local animRestore = TweenService:Create(tabLayout, TWEEN_INFO, {Size = UDim2.new(0, 480, 0, 320), Position = originalPosition})
+    animRestore:Play()
+    
+    animRestore.Completed:Connect(function()
+        menuOpen = true
+    end)
+end
+
+minimizeButton.Activated:Connect(minimizeToCircle)
+quickToggleBtn.Activated:Connect(restoreFromCircle)
+
+---------------------------------------------------------
+-- TOGGLE & SLIDER LOGIC ENV (STAYS UNTOUCHED)
+---------------------------------------------------------
 local events = {
     WalkSpeedToggle = Instance.new("BindableEvent"),
     WalkSpeedSlider = Instance.new("BindableEvent"),
     FlySpeedToggle = Instance.new("BindableEvent")
 }
 
--- Custom element creator tailored to build robust, solid items
 local function createModernToggle(name, text, layoutOrder)
     local container = Instance.new("Frame")
     container.Name = name .. "Container"
@@ -213,24 +330,7 @@ local function createModernToggle(name, text, layoutOrder)
     return container, btn
 end
 
----------------------------------------------------------
--- MENU TOGGLE MECHANIC (Open/Close Menu)
----------------------------------------------------------
-local menuOpen = true
-local function toggleMenu()
-    menuOpen = not menuOpen
-    tabLayout.Visible = menuOpen
-end
-
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.M then
-        toggleMenu()
-    end
-end)
-
----------------------------------------------------------
--- FEATURE 1: WALK SPEED TOGGLE
----------------------------------------------------------
+-- Feature 1 Components setup
 local walkSpeedContainer, walkSpeedToggleBtn = createModernToggle("WalkSpeedToggle", "Enable Custom Walkspeed", 2)
 walkSpeedContainer.Parent = mainContent
 
@@ -303,9 +403,7 @@ end)
 
 walkSpeedToggle.ValueChanged:Connect(toggleWalkSpeed)
 
----------------------------------------------------------
--- FEATURE 2: FLY SPEED TOGGLE
----------------------------------------------------------
+-- Feature 2 Components setup
 local flySpeedContainer, flySpeedToggleBtn = createModernToggle("FlySpeedToggle", "Noclip Fly Activation", 4)
 flySpeedContainer.Parent = mainContent
 
@@ -336,20 +434,12 @@ end
 
 flySpeedToggle.ValueChanged:Connect(toggleFlySpeed)
 
----------------------------------------------------------
--- FEATURE 3: MINIMIZE BUTTON EXECUTION BIND
----------------------------------------------------------
+-- Style interactions for top bar close button
 minimizeButton.MouseEnter:Connect(function()
     TweenService:Create(minimizeButton, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(230, 60, 60), TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
 end)
 minimizeButton.MouseLeave:Connect(function()
     TweenService:Create(minimizeButton, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(40, 40, 50), TextColor3 = Color3.fromRGB(200, 200, 200)}):Play()
-end)
-
-minimizeButton.Activated:Connect(function()
-    if settingsTab then
-        settingsTab:Destroy()
-    end
 end)
 
 -- Initialize values cleanly
