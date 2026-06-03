@@ -38,15 +38,12 @@ toggleSection.Name = "ToggleSection"
 toggleSection.BackgroundTransparency = 0
 toggleSection.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 toggleSection.Size = UDim2.new(1, -20, 0, 30)
-toggleSection.Position = UDim2.new(0.5, -100, 1, -40)
+toggleSection.Position = Udim2.new(0.5, -100, 1, -40)
 toggleSection.zIndexBehavior = Enum.ZIndexBehavior.SortsLast
 settingsTab:FindFirstChild("ToggleSection") and toggleSection.Enabled = true or toggleSection.Enabled = false
 toggleSection.Parent = settingsTab
 
 local function toggleSpeed()
-    if settingsTab:FindFirstChild("speedToggle") then
-        settingsTab:FindFirstChild("speedToggle").Parent:Destroy()
-    end
     local speedToggle = Instance.new("BoolProp")
     speedToggle.Name = "speedToggle"
     speedToggle.Value = false
@@ -64,15 +61,12 @@ sliderSection.Name = "SliderSection"
 sliderSection.BackgroundTransparency = 0
 sliderSection.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 sliderSection.Size = UDim2.new(1, -20, 0, 30)
-sliderSection.Position = UDim2.new(0.5, -100, 1, -40)
+sliderSection.Position = Udim2.new(0.5, -100, 1, -40)
 sliderSection.zIndexBehavior = Enum.ZIndexBehavior.SortsLast
 settingsTab:FindFirstChild("SliderSection") and sliderSection.Enabled = true or sliderSection.Enabled = false
 sliderSection.Parent = settingsTab
 
 local function toggleFly()
-    if settingsTab:FindFirstChild("flyToggle") then
-        settingsTab:FindFirstChild("flyToggle").Parent:Destroy()
-    end
     local flyToggle = Instance.new("BoolProp")
     flyToggle.Name = "flyToggle"
     flyToggle.Value = false
@@ -90,15 +84,12 @@ flySpeedSection.Name = "FlySpeedSection"
 flySpeedSection.BackgroundTransparency = 0
 flySpeedSection.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 flySpeedSection.Size = UDim2.new(1, -20, 0, 30)
-flySpeedSection.Position = UDim2.new(0.5, -100, 1, -40)
+flySpeedSection.Position = Udim2.new(0.5, -100, 1, -40)
 flySpeedSection.zIndexBehavior = Enum.ZIndexBehavior.SortsLast
 settingsTab:FindFirstChild("FlySpeedSection") and flySpeedSection.Enabled = true or flySpeedSection.Enabled = false
 flySpeedSection.Parent = settingsTab
 
 local function toggleFlySpeed()
-    if settingsTab:FindFirstChild("FlySpeedToggle") then
-        settingsTab:FindFirstChild("FlySpeedToggle").Parent:Destroy()
-    end
     local FlySpeedToggle = Instance.new("Slider")
     FlySpeedToggle.Name = "FlySpeedToggle"
     FlySpeedToggle.MaxValue = 10
