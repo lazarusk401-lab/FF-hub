@@ -407,34 +407,31 @@ local function createModernSlider(name, text, layoutOrder, callback)
         end
     end)
 
-    return container, sliderTrack
+    container.Parent = mainContent
+    return container
 end
 
 ---------------------------------------------------------
--- VISUAL BACKEND HOOKS (Safe Hand-Off Zones)
+-- VISUAL BACKEND HOOKS
 ---------------------------------------------------------
 
--- 1. WalkSpeed Toggle
+-- 1. WalkSpeed Master Toggle
 createModernToggle("SpeedToggle", "Enable Custom Walkspeed", 1, function(state)
-    print("Walkspeed UI State Changed:", state)
-    -- Your backend tool can insert custom speed code here
+    print("Walkspeed Master UI State:", state)
 end)
 
--- 2. WalkSpeed Value Slider
+-- 2. WalkSpeed Value Slider Track
 createModernSlider("SpeedSlider", "Speed Value", 2, function(percentage)
-    local scalarValue = 16 + (percentage * 150)
-    print("Walkspeed UI Slider Value:", scalarValue)
-    -- Your backend tool can use this calculated number here
+    local calculatedValue = 16 + (percentage * 150)
+    print("Walkspeed Target Configuration:", calculatedValue)
 end)
 
 -- 3. Flight Mode Toggle
 createModernToggle("FlyToggle", "Flight Mode Active", 3, function(state)
-    print("Flight UI State Changed:", state)
-    -- Your backend tool can insert separate flight system here
+    print("Flight Interface Activated:", state)
 end)
 
 -- 4. Noclip Toggle
 createModernToggle("NoclipToggle", "Enable Noclip (No Walls)", 4, function(state)
-    print("Noclip UI State Changed:", state)
-    -- Your backend tool can insert separate noclip loop here
+    print("Noclip Interface Activated:", state)
 end)
