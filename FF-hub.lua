@@ -21,7 +21,7 @@ local tabLayout = Instance.new("Frame")
 tabLayout.Name = "TabLayout"
 tabLayout.BackgroundColor3 = Color3.fromRGB(24, 24, 30) 
 tabLayout.BorderSizePixel = 0
-tabLayout.Size = UDim2.new(0, 480, 0, 350) -- Expanded for all elements
+tabLayout.Size = UDim2.new(0, 480, 0, 350) 
 tabLayout.Position = UDim2.new(0.5, -240, 0.5, -175) 
 tabLayout.ClipsDescendants = true 
 
@@ -244,7 +244,7 @@ minimizeButton.Activated:Connect(minimizeToCircle)
 quickToggleBtn.Activated:Connect(restoreFromCircle)
 
 ---------------------------------------------------------
--- ELEMENTS GENERATION
+-- UI ELEMENT GENERATORS
 ---------------------------------------------------------
 local function createModernToggle(name, text, layoutOrder, callback)
     local container = Instance.new("Frame")
@@ -354,7 +354,7 @@ local function createModernSlider(name, text, layoutOrder, callback)
 
     local sliderFill = Instance.new("Frame")
     sliderFill.Name = "Fill"
-    sliderFill.Size = UDim2.new(0.1, 0, 1, 0) 
+    sliderFill.Size = UDim2.new(0.2, 0, 1, 0) 
     sliderFill.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
     sliderFill.BorderSizePixel = 0
     sliderFill.Parent = sliderTrack
@@ -366,7 +366,7 @@ local function createModernSlider(name, text, layoutOrder, callback)
     local sliderKnob = Instance.new("Frame")
     sliderKnob.Name = "Knob"
     sliderKnob.Size = UDim2.new(0, 14, 0, 14)
-    sliderKnob.Position = UDim2.new(0.1, -7, 0.5, -7)
+    sliderKnob.Position = UDim2.new(0.2, -7, 0.5, -7)
     sliderKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     sliderKnob.BorderSizePixel = 0
     sliderKnob.Parent = sliderTrack
@@ -407,17 +407,15 @@ local function createModernSlider(name, text, layoutOrder, callback)
         end
     end)
 
-    container.Parent = mainContent
-    return container
+    return container, sliderTrack
 end
 
 ---------------------------------------------------------
--- FEATURE BACKENDS
+-- SPEED MECHANIC
 ---------------------------------------------------------
 local speedEnabled = false
 local targetSpeed = 16
 
--- Speed Toggle and Slider
 createModernToggle("SpeedToggle", "Enable Custom Walkspeed", 1, function(state)
     speedEnabled = state
     local character = player.Character
@@ -434,11 +432,14 @@ createModernSlider("SpeedSlider", "Speed Value", 2, function(percentage)
     end
 end)
 
--- Fly Separate Engine with Floating Animations
+---------------------------------------------------------
+-- FLY SEPARATE TOGGLE (Modern Engine Fix)
+---------------------------------------------------------
 local flyEnabled = false
 local flyConnection = nil
-local bodyPosInstance = nil
-local bodyGyroInstance = nil
+local linearVelocity = nil
+local alignOrientation = nil
+local attachment = nil
 local animCount = 0
 
 createModernToggle("FlyToggle", "Flight Mode Active", 3, function(state)
@@ -450,15 +451,27 @@ createModernToggle("FlyToggle", "Flight Mode Active", 3, function(state)
     if not rootPart or not humanoid then return end
 
     if flyEnabled then
-        bodyPosInstance = Instance.new("BodyPosition")
-        bodyPosInstance.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-        bodyPosInstance.Position = rootPart.Position
-        bodyPosInstance.Parent = rootPart
+        -- Clean structural generation of modern constraints
+        attachment = Instance.new("Attachment")
+        attachment.Name = "FlyAttachment"
+        attachment.Parent = rootPart
+
+        linearVelocity = Instance.new("LinearVelocity")
+        linearVelocity.MaxForce = 50000
+        linearVelocity.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
+        linearVelocity.VectorVelocity = Vector3.new(0, 0, 0)
+        linearVelocity.Attachment0 = attachment
+        linearVelocity.Parent = rootPart
         
-        bodyGyroInstance = Instance.new("BodyGyro")
-        bodyGyroInstance.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-        bodyGyroInstance.CFrame = rootPart.CFrame
-        bodyGyroInstance.Parent = rootPart
+        alignOrientation = Instance.new("AlignOrientation")
+        alignOrientation.MaxTorque = 50000
+        alignOrientation.Responsiveness = 25
+        alignOrientation.Mode = Enum.OrientationMode.OneAttachment
+        alignOrientation.Attachment0 = attachment
+        alignOrientation.CFrame = rootPart.CFrame
+        alignOrientation.Parent = rootPart
+
+        humanoid.PlatformStand = true -- Blocks falling states cleanly
 
         flyConnection = RunService.RenderStepped:Connect(function()
             local camera = workspace.CurrentCamera
@@ -472,40 +485,44 @@ createModernToggle("FlyToggle", "Flight Mode Active", 3, function(state)
             end
             
             animCount = animCount + 0.08
-            local floatOffset = math.sin(animCount) * 0.35
+            local floatOffset = math.sin(animCount) * 0.4
             
-            bodyGyroInstance.CFrame = camera.CFrame
-            bodyPosInstance.Position = bodyPosInstance.Position + (moveDirection * 1.8) + Vector3.new(0, (upVector * 1.4) + floatOffset, 0)
-            rootPart.Velocity = Vector3.new(0, 0, 0)
+            alignOrientation.CFrame = camera.CFrame
+            linearVelocity.VectorVelocity = (moveDirection * 45) + Vector3.new(0, (upVector * 35) + floatOffset, 0)
 
-            -- Flying limb rotation adjustments
-            local joints = {
-                character:FindFirstChild("LeftHip", true),
-                character:FindFirstChild("RightHip", true),
-                character:FindFirstChild("LeftShoulder", true),
-                character:FindFirstChild("RightShoulder", true)
-            }
-            for _, joint in pairs(joints) do
-                if joint and joint:IsA("Motor6D") then
-                    joint.MaxVelocity = 0.15
-                    joint.CurrentAngle = joint.Name:find("Hip") and 0.3 or -0.2
+            -- Smooth Joint Ticking (R15 & R6 structural validation loops)
+            for _, motor in pairs(character:GetDescendants()) do
+                if motor:IsA("Motor6D") then
+                    if motor.Name:find("LeftHip") or motor.Name:find("Left Thigh") then
+                        motor.Transform = CFrame.Angles(0.3, 0, 0)
+                    elseif motor.Name:find("RightHip") or motor.Name:find("Right Thigh") then
+                        motor.Transform = CFrame.Angles(0.3, 0, 0)
+                    elseif motor.Name:find("Shoulder") or motor.Name:find("Arm") then
+                        motor.Transform = CFrame.Angles(-0.2, 0, 0)
+                    end
                 end
             end
         end)
     else
+        -- Clean structural cleanup 
         if flyConnection then flyConnection:Disconnect() flyConnection = nil end
-        if bodyPosInstance then bodyPosInstance:Destroy() bodyPosInstance = nil end
-        if bodyGyroInstance then bodyGyroInstance:Destroy() bodyGyroInstance = nil end
+        if linearVelocity then linearVelocity:Destroy() linearVelocity = nil end
+        if alignOrientation then alignOrientation:Destroy() alignOrientation = nil end
+        if attachment then attachment:Destroy() attachment = nil end
         
-        for _, joint in pairs(character:GetDescendants()) do
-            if joint:IsA("Motor6D") and (joint.Name:find("Hip") or joint.Name:find("Shoulder")) then
-                joint.CurrentAngle = 0
+        if humanoid then humanoid.PlatformStand = false end
+        
+        for _, motor in pairs(character:GetDescendants()) do
+            if motor:IsA("Motor6D") then
+                motor.Transform = CFrame.new()
             end
         end
     end
 end)
 
--- Noclip Separate Loop
+---------------------------------------------------------
+-- NOCLIP SEPARATE TOGGLE
+---------------------------------------------------------
 local noclipEnabled = false
 local noclipConnection = nil
 
@@ -533,7 +550,7 @@ createModernToggle("NoclipToggle", "Enable Noclip (No Walls)", 4, function(state
     end
 end)
 
--- Keep settings responsive on respawn
+-- Structural setup for character spawns
 player.CharacterAdded:Connect(function(char)
     task.wait(0.5)
     if speedEnabled and char:FindFirstChildOfClass("Humanoid") then
