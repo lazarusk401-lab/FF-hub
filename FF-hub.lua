@@ -1,4 +1,97 @@
--- Function to create a new toggle button
+-- Function to check for cheats
+local function checkCheats(input)
+    -- Check for noclip cheat
+    if input.KeyCode == Enum.KeyCode.V then
+        local player = game.Players.LocalPlayer
+        if not player.Character or not player.Character:FindFirstChild("Humanoid") then
+            print("You don't have a character.")
+            return
+        end
+        
+        if player.Character.Humanoid:GetMoistureLevel() < 0.5 then
+            -- Player is too wet, they can't noclip.
+            print("You're too wet to noclip!")
+            return
+        else
+            -- Enable noclip cheat
+            print("Noclip cheat enabled.")
+            local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+            if not player.Anchored then
+                player.Anchored = false
+                print("You're now flying!")
+            end
+        end
+        
+    elseif input.KeyCode == Enum.KeyCode.D then
+        -- Enable speed cheat
+        print("Speed cheat enabled.")
+        
+    elseif input.KeyCode == Enum.KeyCode.F1 then
+        -- Toggle fly mode on/off
+        local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+        if not player.Anchored then
+            player.Anchored = true
+            print("Flying disabled.")
+        else
+            player.Anchored = false
+            print("Flying enabled!")
+        end
+        
+    elseif input.KeyCode == Enum.KeyCode.W then
+        -- Enable teleportation cheat
+        print("Teleportation cheat enabled.")
+        
+    end
+    
+end
+
+-- Function to bind cheats to keys
+local function bindCheats()
+    -- Noclip cheat
+    game:GetService("UserInputService").InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.V then
+            checkCheats(input)
+        end
+    end)
+    
+    -- Speed cheat
+    game:GetService("UserInputService").InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.D then
+            checkCheats(input)
+        end
+    end)
+    
+    -- Fly toggle
+    local function flyToggle()
+        -- Toggle flying on/off
+        local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+        if not player.Anchored then
+            player.Anchored = true
+            print("Flying disabled.")
+        else
+            player.Anchored = false
+            print("Flying enabled!")
+        end
+    end
+    
+    game:GetService("UserInputService").InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.F1 then
+            flyToggle()
+        end
+    end)
+    
+    -- Teleportation cheat
+    game:GetService("UserInputService").InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.W then
+            checkCheats(input)
+        end
+    end)
+end
+
+-- Bind cheats to keys
+bindCheats()
+
+-- Function to create the toggle buttons
 local function createToggle(name, text, layoutOrder)
     local container = Instance.new("Frame")
     container.Name = name .. "Container"
@@ -43,7 +136,12 @@ local function createToggle(name, text, layoutOrder)
     container.Parent = mainContent
 end
 
--- Function to create a new slider button
+-- Create the toggle buttons
+createToggle("NoclipToggle", "Enable Noclip (No Walls)", 4)
+createToggle("SpeedToggle", "Enable Custom Walkspeed", 1)
+createToggle("FlyToggle", "Flight Mode Active", 3)
+
+-- Function to create the slider button
 local function createSlider(name, text, layoutOrder)
     local container = Instance.new("Frame")
     container.Name = name .. "Container"
@@ -106,7 +204,7 @@ local function createSlider(name, text, layoutOrder)
     local sliding = false
     
     local function snapToMouse()
-        local mousePos = UserInputService:GetMouseLocation().X
+        local mousePos = game:GetService("UserInputService").RenderStepped:Wait()
         local trackStart = sliderTrack.AbsolutePosition.X
         local trackWidth = sliderTrack.AbsoluteSize.X
         local percentage = math.clamp((mousePos - trackStart) / trackWidth, 0, 1)
@@ -136,11 +234,6 @@ local function createSlider(name, text, layoutOrder)
 
     container.Parent = mainContent
 end
-
--- Create the toggle buttons
-createToggle("NoclipToggle", "Enable Noclip (No Walls)", 4)
-createToggle("SpeedToggle", "Enable Custom Walkspeed", 1)
-createToggle("FlyToggle", "Flight Mode Active", 3)
 
 -- Create the slider button
 createSlider("SpeedSlider", "Speed Value", 2, function(percentage)
