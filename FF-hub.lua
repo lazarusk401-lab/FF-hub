@@ -23,7 +23,7 @@ tabLayout.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
 tabLayout.BorderSizePixel = 0
 tabLayout.Size = UDim2.new(0, 480, 0, 320) 
 tabLayout.Position = UDim2.new(0.5, -240, 0.5, -160) 
-tabLayout.ClipsDescendants = true -- Keeps animations clean
+tabLayout.ClipsDescendants = true 
 
 local uiCorner = Instance.new("UICorner")
 uiCorner.CornerRadius = UDim.new(0, 8)
@@ -143,18 +143,18 @@ contentListLayout.Parent = mainContent
 local quickToggleBtn = Instance.new("TextButton")
 quickToggleBtn.Name = "QuickToggleButton"
 quickToggleBtn.Size = UDim2.new(0, 50, 0, 50)
-quickToggleBtn.Position = UDim2.new(1, -70, 1, -70) -- Bottom Right
+quickToggleBtn.Position = UDim2.new(1, -70, 1, -70) 
 quickToggleBtn.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
 quickToggleBtn.Text = "FF"
 quickToggleBtn.Font = Enum.Font.GothamBold
 quickToggleBtn.TextColor3 = Color3.fromRGB(0, 180, 255)
 quickToggleBtn.TextSize = 16
 quickToggleBtn.AutoButtonColor = false
-quickToggleBtn.Visible = false -- Starts hidden
+quickToggleBtn.Visible = false 
 quickToggleBtn.Parent = settingsTab
 
 local qtCorner = Instance.new("UICorner")
-qtCorner.CornerRadius = UDim.new(1, 0) -- Circle shape
+qtCorner.CornerRadius = UDim.new(1, 0) 
 qtCorner.Parent = quickToggleBtn
 
 local qtStroke = Instance.new("UIStroke")
@@ -163,14 +163,11 @@ qtStroke.Color = Color3.fromRGB(0, 180, 255)
 qtStroke.Parent = quickToggleBtn
 
 ---------------------------------------------------------
--- UI DRAGGING SYSTEM
+-- FIXED DRAGGING SYSTEM (Calculated via RenderStepped)
 ---------------------------------------------------------
-local dragging, dragInput, dragStart, startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    tabLayout.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
+local dragging = false
+local dragStart = Vector3.new()
+local startPos = UDim2.new()
 
 topBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -178,56 +175,43 @@ topBar.InputBegan:Connect(function(input)
         dragStart = input.Position
         startPos = tabLayout.Position
         
-        input.Changed:Connect(function()
+        local connection
+        connection = input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
+                if connection then connection:Disconnect() end
             end
         end)
     end
 end)
 
-topBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
+RunService.RenderStepped:Connect(function()
+    if dragging then
+        local mousePos = UserInputService:GetMouseLocation()
+        -- Offset fix for topbar core gui overlay space
+        local delta = Vector3.new(mousePos.X, mousePos.Y, 0) - dragStart
+        tabLayout.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset - 36 + delta.Y)
     end
 end)
 
 ---------------------------------------------------------
--- FLUID MINIMIZE / RESTORE SYSTEM
+-- FIXED FLUID MINIMIZE / RESTORE SYSTEM
 ---------------------------------------------------------
 local menuOpen = true
 local originalPosition = tabLayout.Position
 
-local function toggleMenu()
-    if not menuOpen then return end -- If minimized into a circle, only clicking the circle opens it
-    menuOpen = not menuOpen
-    tabLayout.Visible = menuOpen
-end
-
--- Keybind toggle handler
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.M then
-        toggleMenu()
-    end
-end)
-
--- Fluid Minimize to Circle Animation
 local function minimizeToCircle()
     if not menuOpen then return end
     menuOpen = false
-    originalPosition = tabLayout.Position -- Remember position right before minimization
+    originalPosition = tabLayout.Position 
     
-    -- Target destination: Where the circle button stays
     local targetPos = UDim2.new(1, -70, 1, -70)
     
     local animSize = TweenService:Create(tabLayout, TWEEN_INFO, {Size = UDim2.new(0, 50, 0, 50), Position = targetPos})
+    local animFade = TweenService:Create(tabLayout, TWEEN_INFO, {BackgroundTransparency = 1})
+    
     animSize:Play()
+    animFade:Play()
     
     animSize.Completed:Connect(function()
         tabLayout.Visible = false
@@ -238,15 +222,19 @@ local function minimizeToCircle()
     end)
 end
 
--- Fluid Restore from Circle Animation
 local function restoreFromCircle()
     if menuOpen then return end
     
     quickToggleBtn.Visible = false
     tabLayout.Visible = true
+    tabLayout.Size = UDim2.new(0, 50, 0, 50)
+    tabLayout.Position = UDim2.new(1, -70, 1, -70)
     
     local animRestore = TweenService:Create(tabLayout, TWEEN_INFO, {Size = UDim2.new(0, 480, 0, 320), Position = originalPosition})
+    local animVisible = TweenService:Create(tabLayout, TWEEN_INFO, {BackgroundTransparency = 0})
+    
     animRestore:Play()
+    animVisible:Play()
     
     animRestore.Completed:Connect(function()
         menuOpen = true
