@@ -1,188 +1,249 @@
--- Services
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
+-- Overall Layout
+local layout = Instance.new("Frame")
+layout.Name = "Layout"
+layout.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+layout.BorderSizePixel = 0
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+-- Header (Top of Main Panel)
+local header = Instance.new("TextLabel")
+header.Name = "Header"
+header.BackgroundColor3 = Color3.fromRGB(30, 50, 70)
+header.BackgroundTransparency = 1
+header.TextColor3 = Color3.fromRGB(255, 255, 255)
+header.Size = UDim2.new(0, 320, 0, 60)
+header.Font = Enum.Font.SourceSansBold
+header.Text = "FF-HUB"
+header.Parent = layout
 
--- 1. Main ScreenGui Container
-local settingsTab = Instance.new("ScreenGui")
-settingsTab.Name = "UniversalSettingsGui"
-settingsTab.ResetOnSpawn = false -- Keeps the menu from breaking when you die
-settingsTab.Parent = playerGui
+-- Left Sidebar (Navigation)
+local sidebar = Instance.new("Frame")
+sidebar.Name = "Sidebar"
+sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+sidebar.BorderSizePixel = 0
+sidebar.Size = UDim2.new(0, 200, 0, 480)
+sidebar.Position = UDim2.new(0, 10, 0, 30)
+sidebar.Parent = layout
 
--- 2. Main Layout Frame (The Menu Panel)
-local tabLayout = Instance.new("Frame")
-tabLayout.Name = "TabLayout"
-tabLayout.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-tabLayout.BorderSizePixel = 0
-tabLayout.Size = UDim2.new(0, 320, 0, 240)
-tabLayout.Position = UDim2.new(0.5, -160, 0.5, -120) -- Perfectly centered
+local tabList = Instance.new("Frame")
+tabList.Name = "TabList"
+tabList.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+tabList.BorderSizePixel = 0
+tabList.Size = UDim2.new(0, 150, 1, -10)
+tabList.Position = UDim2.new(0, 10, 0, -30)
+tabList.Parent = sidebar
 
--- Rounded corners for a modern look
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 8)
-uiCorner.Parent = tabLayout
-tabLayout.Parent = settingsTab
+local tab = Instance.new("TextLabel")
+tab.Name = "Tab"
+tab.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+tab.BackgroundTransparency = 1
+tab.TextColor3 = Color3.fromRGB(200, 200, 200)
+tab.Size = UDim2.new(0, 150, 1, -10)
+tab.Font = Enum.Font.SourceSans
+tab.Text = "Universal"
+tab.Parent = tabList
 
--- Automatically stacks buttons vertically with 10px spacing
-local uiListLayout = Instance.new("UIListLayout")
-uiListLayout.Padding = UDim.new(0, 10)
-uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-uiListLayout.Parent = tabLayout
+-- Main Content (Universal Tab)
+local content = Instance.new("Frame")
+content.Name = "Content"
+content.BackgroundColor3 = Color3.fromRGB(30, 50, 70)
+content.BackgroundTransparency = 1
+content.Size = UDim2.new(0, 320, 0, 480)
+content.Position = UDim2.new(0, -190, 0, 60)
+content.Parent = layout
 
--- Padding around the inside edges of the menu
-local uiPadding = Instance.new("UIPadding")
-uiPadding.PaddingTop = UDim.new(0, 15)
-uiPadding.Parent = tabLayout
+local speedControl = Instance.new("Frame")
+speedControl.Name = "SpeedControl"
+speedControl.BackgroundColor3 = Color3.fromRGB(30, 50, 70)
+speedControl.BackgroundTransparency = 1
+speedControl.Size = UDim2.new(0, 320, 1, -60)
+speedControl.Position = UDim2.new(0, -190, 0, -10)
+speedControl.Parent = content
 
--- 3. Menu Title Label
-local tabTitle = Instance.new("TextLabel")
-tabTitle.Name = "TabTitle"
-tabTitle.BackgroundTransparency = 1
-tabTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-tabTitle.TextSize = 22
-tabTitle.Text = "Universal Settings"
-tabTitle.Font = Enum.Font.SourceSansBold
-tabTitle.Size = UDim2.new(1, 0, 0, 30)
-tabTitle.LayoutOrder = 1
-tabTitle.Parent = tabLayout
+local speedToggle = Instance.new("Frame")
+speedToggle.Name = "SpeedToggle"
+speedToggle.BackgroundColor3 = Color3.fromRGB(30, 50, 70)
+speedToggle.BackgroundTransparency = 1
+speedToggle.Size = UDim2.new(0, 100, 1, -20)
+speedToggle.Position = UDim2.new(0, -130, 0, -10)
+speedToggle.Parent = speedControl
 
----------------------------------------------------------
--- MENU TOGGLE MECHANIC (Open/Close Menu)
----------------------------------------------------------
-local function toggleMenu()
-    tabLayout.Visible = not tabLayout.Visible
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Name = "SpeedLabel"
+speedLabel.BackgroundColor3 = Color3.fromRGB(30, 50, 70)
+speedLabel.BackgroundTransparency = 1
+speedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+speedLabel.Size = UDim2.new(0, 100, 1, -10)
+speedLabel.Font = Enum.Font.SourceSans
+speedLabel.Text = "Speed"
+speedLabel.Parent = speedToggle
+
+local speedSlider = Instance.new("Frame")
+speedSlider.Name = "SpeedSlider"
+speedSlider.BackgroundColor3 = Color3.fromRGB(30, 50, 70)
+speedSlider.BackgroundTransparency = 1
+speedSlider.Size = UDim2.new(0, 100, 1, -20)
+speedSlider.Position = UDim2.new(0, 130, 0, -10)
+speedSlider.Parent = speedControl
+
+local flyControls = Instance.new("Frame")
+flyControls.Name = "FlyControls"
+flyControls.BackgroundColor3 = Color3.fromRGB(30, 50, 70)
+flyControls.BackgroundTransparency = 1
+flyControls.Size = UDim2.new(0, 320, 1, -60)
+flyControls.Position = UDim2.new(0, -190, 0, -10)
+flyControls.Parent = content
+
+local flyToggle = Instance.new("Frame")
+flyToggle.Name = "FlyToggle"
+flyToggle.BackgroundColor3 = Color3.fromRGB(30, 50, 70)
+flyToggle.BackgroundTransparency = 1
+flyToggle.Size = UDim2.new(0, 100, 1, -20)
+flyToggle.Position = UDim2.new(0, -130, 0, -10)
+flyToggle.Parent = flyControls
+
+local flyLabel = Instance.new("TextLabel")
+flyLabel.Name = "FlyLabel"
+flyLabel.BackgroundColor3 = Color3.fromRGB(30, 50, 70)
+flyLabel.BackgroundTransparency = 1
+flyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+flyLabel.Size = UDim2.new(0, 100, 1, -10)
+flyLabel.Font = Enum.Font.SourceSans
+flyLabel.Text = "Fly"
+flyLabel.Parent = flyToggle
+
+local flySlider = Instance.new("Frame")
+flySlider.Name = "FlySlider"
+flySlider.BackgroundColor3 = Color3.fromRGB(30, 50, 70)
+flySlider.BackgroundTransparency = 1
+flySlider.Size = UDim2.new(0, 100, 1, -20)
+flySlider.Position = UDim2.new(0, 130, 0, -10)
+flySlider.Parent = flyControls
+
+local animationManager = Instance.new("TweenService")
+animationManager.Parent = game:GetService("RunService")
+
+local function createAnimation tween(target, propertyPath, value, easing)
+    local tweenInfo = TweenInfo.new(tweenValueTime, tweenType)
+    tweenService:Play TweenInfo.new(tweenInfo, tweenTarget, tweenValue, tweenEasing)
 end
 
--- Toggles menu when 'M' key is pressed
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.M then
-        toggleMenu()
-    end
-end)
+local tweenManager = Instance.new("TweenService")
+tweenManager.Parent = game:GetService("RunService")
 
----------------------------------------------------------
--- FEATURE 1: WALK SPEED TOGGLE
----------------------------------------------------------
-local function toggleWalkSpeed()
-    local character = player.Character or player.CharacterAdded
-    local humanoid = character:WaitForChild("Humanoid")
-    
-    if not humanoid then return end
-    
-    -- Toggle value here (true/false)
-    local walkSpeedOn = false
-    
-    -- Update speed
-    if walkSpeedOn then
-        humanoid.WalkSpeed = 50
-        tabLayout:FindFirstChild("WalkSpeedSlider").Value = 1
-    else
-        humanoid.WalkSpeed = 16
-        tabLayout:FindFirstChild("WalkSpeedSlider").Value = 0
+local function createHoverAnimation(target, propertyPath, value, easing)
+    local tweenInfo = TweenInfo.new(hoverAnimationTime, tweenType)
+    tweenService:Play TweenInfo.new(tweenInfo, tweenTarget, tweenValue, tweenEasing)
+end
+
+-- Tab switching
+local tabClickFunction = function(tab)
+    -- Hide active tabs
+    for i, v in pairs(tabList:GetChildren()) do
+        if v.Name ~= "Active" then
+            v:Destroy()
+        end
     end
     
-    -- Update toggle button text and color
-    tabLayout:FindFirstChild("WalkSpeedToggle").Text = tostring(walkSpeedOn)
-    if walkSpeedOn then
-        tabLayout:FindFirstChild("WalkSpeedToggle").BackgroundColor3 = Color3.fromRGB(180, 40, 40) -- Red
-    else
-        tabLayout:FindFirstChild("WalkSpeedToggle").BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    -- Show selected tab
+    tab:Destroy()
+    local newTab = Instance.new("TextLabel")
+    newTab.Name = "Active"
+    newTab.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    newTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+    newTab.Size = UDim2.new(0, 150, 1, -10)
+    newTab.Font = Enum.Font.SourceSans
+    newTab.Text = tab.Name
+    tabList:InsertChildAt(1, newTab)
+end
+
+tabClickFunction(tab)
+
+-- Event listeners
+local function onHoverOver()
+    createHoverAnimation(speedToggle, "BackgroundTransparency", 0.2, Enum.EasingStyle.Sine)
+    createHoverAnimation(flyToggle, "BackgroundTransparency", 0.2, Enum.EasingStyle.Sine)
+end
+
+speedToggle.Hovered:Connect(onHoverOver)
+
+local function onHoverOut()
+    createHoverAnimation(speedToggle, "BackgroundTransparency", 1, Enum.EasingStyle.Sine)
+    createHoverAnimation(flyToggle, "BackgroundTransparency", 1, Enum.EasingStyle.Sine)
+end
+
+speedToggle.OutToRest:Connect(onHoverOut)
+
+-- Event listeners for sliders
+local function onSliderDrag(eventParameters)
+    local slider = eventParameters.Parent
+    if slider.Name == "SpeedSlider" then
+        createAnimation tween(speedControl, "BackgroundColorTransparency", 0.2, Enum.EasingStyle.Sine)
+    elseif slider.Name == "FlySlider" then
+        createAnimation tween(flyControls, "BackgroundColorTransparency", 0.2, Enum.EasingStyle.Sine)
+    end
+    
+    local knob = eventParameters.Parent:FindFirstChild("Knob")
+    if knob then
+        local offset = (eventParameters.Value - slider.MaxValue) / (slider.MinValue - slider.MaxValue) * knob.Size.X
+        knob.Position = UDim2.new(0, offset, 0, 0)
     end
 end
 
-local walkSpeedSlider = Instance.new("Slider")
-walkSpeedSlider.Name = "WalkSpeedSlider"
-walkSpeedSlider.Parent = tabLayout
-walkSpeedSlider.ValueChanged:Connect(function(value)
-    local character = player.Character or player.CharacterAdded
-    local humanoid = character:WaitForChild("Humanoid")
-    
-    if humanoid then
-        -- Get old speed value
-        local oldSpeedValue = humanoid.WalkSpeed
-        
-        -- Set new speed value
-        humanoid.WalkSpeed = 16 + (value * 34)
-        
-        -- Update humanoids walk speed to be smooth and not stutter
-        RunService.RenderStepped:Connect(function()
-            if humanoid then
-                humanoid.WalkSpeed = lerp(oldSpeedValue, humanoid.WalkSpeed, 1 / 60)
-            end
-        end)
-    end
-end)
+speedSlider DragStarted:Connect(onSliderDrag)
+flySlider DragStarted:Connect(onSliderDrag)
 
-local walkSpeedToggle = Instance.new(" Toggle")
-walkSpeedToggle.Name = "WalkSpeedToggle"
-walkSpeedToggle.Parent = tabLayout
-walkSpeedToggle.ValueChanged:Connect(toggleWalkSpeed)
-
----------------------------------------------------------
--- FEATURE 2: FLY SPEED TOGGLE
----------------------------------------------------------
-local function toggleFlySpeed()
-    local character = player.Character or player.CharacterAdded
-    
-    if not character then return end
-    
-    -- Toggle value here (true/false)
-    local flySpeedOn = false
-    
-    -- Update speed
-    if flySpeedOn then
-        character:WaitForChild(" humanoidRootPart").CanCollide = false
-    else
-        character:WaitForChild("humanoidRootPart").CanCollide = true
+-- Event listeners for toggle
+local function onToggle()
+    local toggle = eventParameters.Parent
+    if toggle.Name == "SpeedToggle" then
+        createAnimation tween(speedControl, "BackgroundColorTransparency", 0.2, Enum.EasingStyle.Sine)
+        createHoverAnimation(speedToggle, "BackgroundTransparency", 0.2, Enum.EasingStyle.Sine)
+        speedSlider.Value = (toggle.Value) * slider.MaxValue / slider.MinValue
+    elseif toggle.Name == "FlyToggle" then
+        createAnimation tween(flyControls, "BackgroundColorTransparency", 0.2, Enum.EasingStyle.Sine)
+        createHoverAnimation(flyToggle, "BackgroundTransparency", 0.2, Enum.EasingStyle.Sine)
+        flySlider.Value = (toggle.Value) * slider.MaxValue / slider.MinValue
     end
     
-    -- Update toggle button text and color
-    tabLayout:FindFirstChild("FlySpeedToggle").Text = tostring(flySpeedOn)
-    if flySpeedOn then
-        tabLayout:FindFirstChild("FlySpeedToggle").BackgroundColor3 = Color3.fromRGB(180, 40, 40) -- Red
-    else
-        tabLayout:FindFirstChild("FlySpeedToggle").BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    if toggle.Name == "SpeedToggle" then
+        local knob = speedToggle:FindFirstChild("Knob")
+        if knob then
+            createAnimation tween(knob, "Position", 0.2, Enum.EasingStyle.Sine)
+        end
+    elseif toggle.Name == "FlyToggle" then
+        local knob = flyToggle:FindFirstChild("Knob")
+        if knob then
+            createAnimation tween(knob, "Position", 0.2, Enum.EasingStyle.Sine)
+        end
+    end
+    
+    speedSlider.Value = (toggle.Value) * slider.MaxValue / slider.MinValue
+end
+
+speedToggle.Touched:Connect(onToggle)
+flyToggle.Touched:Connect(onToggle)
+
+-- Event listeners for slider movement
+local function onSliderMoved(eventParameters)
+    local slider = eventParameters.Parent
+    if slider.Name == "SpeedSlider" then
+        createAnimation tween(speedControl, "BackgroundColorTransparency", 0.2, Enum.EasingStyle.Sine)
+    elseif slider.Name == "FlySlider" then
+        createAnimation tween(flyControls, "BackgroundColorTransparency", 0.2, Enum.EasingStyle.Sine)
+    end
+    
+    local knob = eventParameters.Parent:FindFirstChild("Knob")
+    if knob then
+        local offset = (eventParameters.Value - slider.MaxValue) / (slider.MinValue - slider.MaxValue) * knob.Size.X
+        knob.Position = UDim2.new(0, offset, 0, 0)
     end
 end
 
-local flySpeedToggle = Instance.new(" Toggle")
-flySpeedToggle.Name = "FlySpeedToggle"
-flySpeedToggle.Parent = tabLayout
-flySpeedToggle.ValueChanged:Connect(toggleFlySpeed)
+speedSlider.Moved:Connect(onSliderMoved)
+flySlider.Moved:Connect(onSliderMoved)
 
----------------------------------------------------------
--- FEATURE 3: MINIMIZE BUTTON
----------------------------------------------------------
-local function minimizeSettings()
-    settingsTab.Visible = not settingsTab.Visible
-end
+Note that this script is just a starting point and will require additional modifications to fully function as intended. The code above demonstrates basic concepts such as tweening, hover effects, event listeners, and UI manipulation. However, there are many ways to improve the performance, readability, and maintainability of the code.
 
-local minimizeButton = Instance.new("Frame")
-minimizeButton.Name = "MinimizeButton"
-minimizeButton.Size = UDim2.new(0, 100, 0, 20)
-minimizeButton.Position = UDim2.new(1, -10, 0.8, 0)
-minimizeButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-minimizeButton.Parent = tabLayout
+The main goal of this script is to create a simple UI layout with speed and fly controls, along with their respective effects. The script also demonstrates basic concepts such as event handling, animation management, and UI manipulation.
 
-local minimizeText = Instance.new("TextLabel")
-minimizeText.Name = "MinimizeText"
-minimizeText.Text = "+"
-minimizeText.Font = Enum.Font.SourceSans
-minimizeText.Size = UDim2.new(0, 20, 1, 0)
-minimizeText.Parent = minimizeButton
-
-local function onActivate()
-    if settingsTab then
-        settingsTab:Destroy()
-    end
-end
-
-minimizeButton.Activated:Connect(onActivate)
-
--- Initialize the UI
-tabLayout:FindFirstChild("WalkSpeedToggle").Value = false
-tabLayout:FindFirstChild("FlySpeedToggle").Value = false
+Please note that creating interactive UI elements can be complex and may require additional work to ensure proper functionality. Always test your code thoroughly before deploying it in production.
