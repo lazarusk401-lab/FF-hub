@@ -16,12 +16,12 @@ settingsTab.Name = "UniversalSettingsGui"
 settingsTab.ResetOnSpawn = false 
 settingsTab.Parent = playerGui
 
--- 2. Main Windows Frame (Matches the multi-tab layout style)
+-- 2. Main Windows Frame (Solid colors to eliminate engine blackouts)
 local tabLayout = Instance.new("Frame")
 tabLayout.Name = "TabLayout"
-tabLayout.BackgroundColor3 = Color3.fromRGB(20, 20, 25) 
+tabLayout.BackgroundColor3 = Color3.fromRGB(24, 24, 30) 
 tabLayout.BorderSizePixel = 0
-tabLayout.Size = UDim2.new(0, 480, 0, 320) -- Wider window for the multi-tab layout
+tabLayout.Size = UDim2.new(0, 480, 0, 320) 
 tabLayout.Position = UDim2.new(0.5, -240, 0.5, -160) 
 
 local uiCorner = Instance.new("UICorner")
@@ -29,7 +29,7 @@ uiCorner.CornerRadius = UDim.new(0, 8)
 uiCorner.Parent = tabLayout
 
 local uiStroke = Instance.new("UIStroke")
-uiStroke.Thickness = 1.5
+uiStroke.Thickness = 1
 uiStroke.Color = Color3.fromRGB(45, 45, 55)
 uiStroke.Parent = tabLayout
 
@@ -39,7 +39,7 @@ tabLayout.Parent = settingsTab
 local topBar = Instance.new("Frame")
 topBar.Name = "TopBar"
 topBar.Size = UDim2.new(1, 0, 0, 35)
-topBar.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+topBar.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
 topBar.BorderSizePixel = 0
 topBar.Parent = tabLayout
 
@@ -47,11 +47,11 @@ local topBarCorner = Instance.new("UICorner")
 topBarCorner.CornerRadius = UDim.new(0, 8)
 topBarCorner.Parent = topBar
 
--- Hide lower corners of top bar
+-- Overlay to mask lower rounded corners
 local topBarLine = Instance.new("Frame")
 topBarLine.Size = UDim2.new(1, 0, 0, 5)
 topBarLine.Position = UDim2.new(0, 0, 1, -5)
-topBarLine.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+topBarLine.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
 topBarLine.BorderSizePixel = 0
 topBarLine.Parent = topBar
 
@@ -60,7 +60,7 @@ titleLabel.Name = "TitleLabel"
 titleLabel.Text = "FF-hub"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
-titleLabel.TextColor3 = Color3.fromRGB(0, 180, 255) -- Vivid blue theme accent
+titleLabel.TextColor3 = Color3.fromRGB(0, 180, 255) 
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Size = UDim2.new(0, 100, 1, 0)
 titleLabel.Position = UDim2.new(0, 12, 0, 0)
@@ -71,7 +71,7 @@ local minimizeButton = Instance.new("TextButton")
 minimizeButton.Name = "MinimizeButton"
 minimizeButton.Size = UDim2.new(0, 25, 0, 25)
 minimizeButton.Position = UDim2.new(1, -32, 0, 5)
-minimizeButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 minimizeButton.Font = Enum.Font.GothamBold
 minimizeButton.Text = "-"
 minimizeButton.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -83,21 +83,14 @@ local minCorner = Instance.new("UICorner")
 minCorner.CornerRadius = UDim.new(0, 6)
 minCorner.Parent = minimizeButton
 
--- 4. Left Sidebar Layout (Navigation)
+-- 4. Left Sidebar Layout (Navigation Sidebar)
 local sideBar = Instance.new("Frame")
 sideBar.Name = "SideBar"
 sideBar.Size = UDim2.new(0, 120, 1, -35)
 sideBar.Position = UDim2.new(0, 0, 0, 35)
-sideBar.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
+sideBar.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
 sideBar.BorderSizePixel = 0
 sideBar.Parent = tabLayout
-
-local sideBarLine = Instance.new("Frame")
-sideBarLine.Size = UDim2.new(0, 1, 1, 0)
-sideBarLine.Position = UDim2.new(1, -1, 0, 0)
-sideBarLine.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-sideBarLine.BorderSizePixel = 0
-sideBarLine.Parent = sideBar
 
 local sidePadding = Instance.new("UIPadding")
 sidePadding.PaddingTop = UDim.new(0, 10)
@@ -105,11 +98,11 @@ sidePadding.PaddingLeft = UDim.new(0, 8)
 sidePadding.PaddingRight = UDim.new(0, 8)
 sidePadding.Parent = sideBar
 
--- Universal Tab Button
+-- Universal Tab Navigation Element
 local universalTabBtn = Instance.new("TextButton")
 universalTabBtn.Name = "UniversalTabButton"
 universalTabBtn.Size = UDim2.new(1, 0, 0, 32)
-universalTabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+universalTabBtn.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
 universalTabBtn.Font = Enum.Font.GothamBold
 universalTabBtn.Text = "Universal"
 universalTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -127,15 +120,13 @@ tabStroke.Color = Color3.fromRGB(0, 180, 255)
 tabStroke.Transparency = 0.5
 tabStroke.Parent = universalTabBtn
 
--- 5. Right Main Content Area
-local mainContent = Instance.new("ScrollingFrame")
+-- 5. Right Content Area Frame
+local mainContent = Instance.new("Frame")
 mainContent.Name = "MainContent"
 mainContent.Size = UDim2.new(1, -120, 1, -35)
 mainContent.Position = UDim2.new(0, 120, 0, 35)
 mainContent.BackgroundTransparency = 1
 mainContent.BorderSizePixel = 0
-mainContent.ScrollBarThickness = 2
-mainContent.ScrollBarImageColor3 = Color3.fromRGB(45, 45, 55)
 mainContent.Parent = tabLayout
 
 local contentPadding = Instance.new("UIPadding")
@@ -149,19 +140,19 @@ contentListLayout.Padding = UDim.new(0, 10)
 contentListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 contentListLayout.Parent = mainContent
 
--- Setup Custom Environment Bindings for the scripts
+-- Setup Custom Event Environment Handlers
 local events = {
     WalkSpeedToggle = Instance.new("BindableEvent"),
     WalkSpeedSlider = Instance.new("BindableEvent"),
     FlySpeedToggle = Instance.new("BindableEvent")
 }
 
--- Custom element creator tailored to the look of the layout image
+-- Custom element creator tailored to build robust, solid items
 local function createModernToggle(name, text, layoutOrder)
     local container = Instance.new("Frame")
     container.Name = name .. "Container"
     container.Size = UDim2.new(1, 0, 0, 40)
-    container.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+    container.BackgroundColor3 = Color3.fromRGB(32, 32, 40)
     container.BorderSizePixel = 0
     container.LayoutOrder = layoutOrder
     
@@ -184,7 +175,7 @@ local function createModernToggle(name, text, layoutOrder)
     btn.Name = name
     btn.Size = UDim2.new(0, 45, 0, 22)
     btn.Position = UDim2.new(1, -57, 0.5, -11)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    btn.BackgroundColor3 = Color3.fromRGB(48, 48, 60)
     btn.Text = ""
     btn.AutoButtonColor = false
     btn.Parent = container
@@ -195,14 +186,14 @@ local function createModernToggle(name, text, layoutOrder)
 
     local bStroke = Instance.new("UIStroke")
     bStroke.Thickness = 1
-    bStroke.Color = Color3.fromRGB(55, 55, 70)
+    bStroke.Color = Color3.fromRGB(65, 65, 80)
     bStroke.Parent = btn
 
     local dot = Instance.new("Frame")
     dot.Name = "Dot"
     dot.Size = UDim2.new(0, 16, 0, 16)
     dot.Position = UDim2.new(0, 3, 0.5, -8)
-    dot.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    dot.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
     dot.BorderSizePixel = 0
     dot.Parent = btn
 
@@ -214,7 +205,6 @@ local function createModernToggle(name, text, layoutOrder)
     valueObj.Name = "Value"
     valueObj.Parent = btn
 
-    -- Fancy sliding switch micro-interactions
     btn.Activated:Connect(function()
         valueObj.Value = not valueObj.Value
         events[name]:Fire(valueObj.Value)
@@ -244,7 +234,6 @@ end)
 local walkSpeedContainer, walkSpeedToggleBtn = createModernToggle("WalkSpeedToggle", "Enable Custom Walkspeed", 2)
 walkSpeedContainer.Parent = mainContent
 
--- Construct a modern mock Slider item layout
 local walkSpeedSliderBtn = Instance.new("Frame")
 walkSpeedSliderBtn.Name = "WalkSpeedSlider"
 walkSpeedSliderBtn.Size = UDim2.new(1, 0, 0, 20)
@@ -283,13 +272,12 @@ local function toggleWalkSpeed()
         sliderMT.Value = 0
     end
     
-    -- Animate the sleek UI switch node
     if walkSpeedOn then
-        TweenService:Create(walkSpeedToggleBtn.Dot, TWEEN_INFO, {Position = UDim2.new(1, -19, 0.5, -8), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        TweenService:Create(walkSpeedToggleBtn.Dot, TWEEN_INFO, {Position = UDim2.new(1, -19, 0.5, -8)}):Play()
         TweenService:Create(walkSpeedToggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(0, 150, 255)}):Play()
     else
-        TweenService:Create(walkSpeedToggleBtn.Dot, TWEEN_INFO, {Position = UDim2.new(0, 3, 0.5, -8), BackgroundColor3 = Color3.fromRGB(200, 200, 200)}):Play()
-        TweenService:Create(walkSpeedToggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(40, 40, 50)}):Play()
+        TweenService:Create(walkSpeedToggleBtn.Dot, TWEEN_INFO, {Position = UDim2.new(0, 3, 0.5, -8)}):Play()
+        TweenService:Create(walkSpeedToggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(48, 48, 60)}):Play()
     end
 end
 
@@ -337,13 +325,12 @@ local function toggleFlySpeed()
         rootPart.CanCollide = not flySpeedOn
     end
     
-    -- Animate the sleek UI switch node
     if flySpeedOn then
-        TweenService:Create(flySpeedToggleBtn.Dot, TWEEN_INFO, {Position = UDim2.new(1, -19, 0.5, -8), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        TweenService:Create(flySpeedToggleBtn.Dot, TWEEN_INFO, {Position = UDim2.new(1, -19, 0.5, -8)}):Play()
         TweenService:Create(flySpeedToggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(0, 150, 255)}):Play()
     else
-        TweenService:Create(flySpeedToggleBtn.Dot, TWEEN_INFO, {Position = UDim2.new(0, 3, 0.5, -8), BackgroundColor3 = Color3.fromRGB(200, 200, 200)}):Play()
-        TweenService:Create(flySpeedToggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(40, 40, 50)}):Play()
+        TweenService:Create(flySpeedToggleBtn.Dot, TWEEN_INFO, {Position = UDim2.new(0, 3, 0.5, -8)}):Play()
+        TweenService:Create(flySpeedToggleBtn, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(48, 48, 60)}):Play()
     end
 end
 
@@ -356,17 +343,15 @@ minimizeButton.MouseEnter:Connect(function()
     TweenService:Create(minimizeButton, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(230, 60, 60), TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
 end)
 minimizeButton.MouseLeave:Connect(function()
-    TweenService:Create(minimizeButton, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(35, 35, 45), TextColor3 = Color3.fromRGB(200, 200, 200)}):Play()
+    TweenService:Create(minimizeButton, TWEEN_INFO, {BackgroundColor3 = Color3.fromRGB(40, 40, 50), TextColor3 = Color3.fromRGB(200, 200, 200)}):Play()
 end)
 
-local function onActivate()
+minimizeButton.Activated:Connect(function()
     if settingsTab then
         settingsTab:Destroy()
     end
-end
+end)
 
-minimizeButton.Activated:Connect(onActivate)
-
--- Initialize values safely 
+-- Initialize values cleanly
 toggleMT.Value = false
 flyMT.Value = false
