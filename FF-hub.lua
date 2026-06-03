@@ -11,7 +11,7 @@ tabLayout.Name = "TabLayout"
 tabLayout.BackgroundTransparency = 0
 tabLayout.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 tabLayout.Size = UDim2.new(0, 300, 0, 100)
-tabLayout.Position = UDim2.new(0.5, -150, 1, -40)
+tabLayout.Position = Udim2.new(0.5, -150, 1, -40)
 tabLayout.zIndexBehavior = Enum.ZIndexBehavior.SortsLast
 settingsTab.ChildAdded:Connect(function(child) if child.Name == "Settings" then tabLayout.Enabled = true end )
 tabLayout.Parent = settingsTab
@@ -44,12 +44,19 @@ settingsTab:FindFirstChild("ToggleSection") and toggleSection.Enabled = true or 
 toggleSection.Parent = settingsTab
 
 local function toggleSpeed()
-    local speedToggle = Instance.new("BoolProp")
-    speedToggle.Name = "speedToggle"
-    speedToggle.Value = false
+    local speedToggle = Instance.new("Script")
+    speedToggle.Name = "SpeedToggle"
     speedToggle.Parent = toggleSection
-    local function onToggled() if speedToggle.Value then RunService.RenderStepped:Connect(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 20 end ) else game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Enum.HumanoidWalkSpeedNormal end
-    speedToggle.OnChanged:Connect(onToggled)
+    
+    -- In the script:
+    speedToggle.OnEvent:Connect(function() 
+        local value = game.Players.LocalPlayer.Character.Humanoid.WalkSpeed
+        if value == 20 then
+            RunService.RenderStepped:Connect(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 20 end )
+        else
+            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Enum.HumanoidWalkSpeedNormal
+        end
+    end)
 end
 
 toggleSection.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then toggleSpeed() end )
@@ -67,12 +74,19 @@ settingsTab:FindFirstChild("SliderSection") and sliderSection.Enabled = true or 
 sliderSection.Parent = settingsTab
 
 local function toggleFly()
-    local flyToggle = Instance.new("BoolProp")
-    flyToggle.Name = "flyToggle"
-    flyToggle.Value = false
+    local flyToggle = Instance.new("Script")
+    flyToggle.Name = "FlyToggle"
     flyToggle.Parent = toggleSection
-    local function onToggled() if flyToggle.Value then game.Players.LocalPlayer.Character.HumanoidRootPart.Anchored = false end else game.Players.LocalPlayer.Character.HumanoidRootPart.Anchored = true end
-    flyToggle.OnChanged:Connect(onToggled)
+    
+    -- In the script:
+    flyToggle.OnEvent:Connect(function() 
+        local value = game.Players.LocalPlayer.Character.HumanoidRootPart.Anchored
+        if value then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.Anchored = false
+        else
+            game.Players.LocalPlayer.Character.HumanoidRootPart.Anchored = true
+        end
+    end)
 end
 
 toggleSection.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then toggleFly() end )
@@ -100,3 +114,17 @@ end
 
 toggleSection.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then toggleFlySpeed() end )
 UserInputService.InputBegan:Connect(function(input) if input.KeyCode == Enum.KeyCode.Space then toggleFlySpeed() end )
+
+-- Function to update and run the scripts
+local function runScripts()
+    -- Run all script updates here
+end
+
+-- Run the script every time it loads or you want to update it
+runScripts()
+
+-- Call this function whenever you need to update the scripts
+function updateScripts()
+    -- Update any logic in your scripts as needed
+    runScripts()
+end
