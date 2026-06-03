@@ -79,6 +79,13 @@ tabTitle.Size = UDim2.new(1, 0, 0, 25)
 tabTitle.LayoutOrder = 1
 tabTitle.Parent = tabLayout
 
+-- Setup Custom Event Handlers to make the AI's logic compatible with Roblox
+local events = {
+    WalkSpeedToggle = Instance.new("BindableEvent"),
+    WalkSpeedSlider = Instance.new("BindableEvent"),
+    FlySpeedToggle = Instance.new("BindableEvent")
+}
+
 -- Helper function to generate working toggle components safely
 local function createModernToggle(name, text, layoutOrder)
     local btn = Instance.new("TextButton")
@@ -102,29 +109,10 @@ local function createModernToggle(name, text, layoutOrder)
     btnStroke.Transparency = 0.9
     btnStroke.Parent = btn
 
-    -- Critical Execution Fix: Simulating the custom properties/events your script expects
+    -- Add value containers inside the button so the AI script can find them
     local valueObj = Instance.new("BoolValue")
     valueObj.Name = "Value"
     valueObj.Parent = btn
-
-    local changedEvent = Instance.new("BindableEvent")
-    changedEvent.Name = "ValueChanged"
-    changedEvent.Parent = btn
-
-    -- Redirecting custom environment indexing so script features don't crash
-    local fakeRef = setmetatable({}, {
-        __index = function(_, key)
-            if key == "Value" then return valueObj.Value
-            elseif key == "ValueChanged" then return changedEvent.Event
-            else return btn[key] end
-        end,
-        __newindex = function(_, key, val)
-            if key == "Value" then 
-                valueObj.Value = val
-                changedEvent:Fire(val)
-            else btn[key] = val end
-        end
-    })
 
     -- Hover Animations
     btn.MouseEnter:Connect(function()
@@ -139,10 +127,11 @@ local function createModernToggle(name, text, layoutOrder)
     end)
 
     btn.Activated:Connect(function()
-        fakeRef.Value = not valueObj.Value
+        valueObj.Value = not valueObj.Value
+        events[name]:Fire(valueObj.Value)
     end)
 
-    return btn, fakeRef
+    return btn
 end
 
 ---------------------------------------------------------
@@ -172,11 +161,9 @@ end)
 ---------------------------------------------------------
 -- FEATURE 1: WALK SPEED TOGGLE
 ---------------------------------------------------------
--- Instantiating elements directly into the tree first so FindFirstChild doesn't fail
-local walkSpeedToggleBtn, walkSpeedToggle = createModernToggle("WalkSpeedToggle", "Walkspeed: OFF", 2)
+local walkSpeedToggleBtn = createModernToggle("WalkSpeedToggle", "Walkspeed: OFF", 2)
 walkSpeedToggleBtn.Parent = tabLayout
 
--- Re-engineering slider structure into a valid script instance layout
 local walkSpeedSliderBtn = Instance.new("Frame")
 walkSpeedSliderBtn.Name = "WalkSpeedSlider"
 walkSpeedSliderBtn.Size = UDim2.new(1, 0, 0, 12)
@@ -188,22 +175,22 @@ local sliderValueObj = Instance.new("NumberValue")
 sliderValueObj.Name = "Value"
 sliderValueObj.Parent = walkSpeedSliderBtn
 
-local sliderChangedEvent = Instance.new("BindableEvent")
-sliderChangedEvent.Name = "ValueChanged"
-sliderChangedEvent.Parent = walkSpeedSliderBtn
+-- Create mock environment wrappers to catch the AI script's custom calls cleanly
+local walkSpeedToggle = {
+    ValueChanged = events.WalkSpeedToggle.Event
+}
+local walkSpeedSlider = {
+    ValueChanged = events.WalkSpeedSlider.Event
+}
 
-local walkSpeedSlider = setmetatable({}, {
-    __index = function(_, key)
-        if key == "Value" then return sliderValueObj.Value
-        elseif key == "ValueChanged" then return sliderChangedEvent.Event
-        else return walkSpeedSliderBtn[key] end
-    end,
-    __newindex = function(_, key, val)
-        if key == "Value" then 
-            sliderValueObj.Value = val
-            sliderChangedEvent:Fire(val)
-        else walkSpeedSliderBtn[key] = val end
-    end
+-- Allow the script to dynamically change the .Value without breaking
+local toggleMT = setmetatable(walkSpeedToggle, {
+    __index = function(t, k) if k == "Value" then return walkSpeedToggleBtn.Value.Value end end,
+    __newindex = function(t, k, v) if k == "Value" then walkSpeedToggleBtn.Value.Value = v end end
+})
+local sliderMT = setmetatable(walkSpeedSlider, {
+    __index = function(t, k) if k == "Value" then return sliderValueObj.Value end end,
+    __newindex = function(t, k, v) if k == "Value" then sliderValueObj.Value = v events.WalkSpeedSlider:Fire(v) end end
 })
 
 local function toggleWalkSpeed()
@@ -211,14 +198,14 @@ local function toggleWalkSpeed()
     local humanoid = character:WaitForChild("Humanoid")
     if not humanoid then return end
     
-    local walkSpeedOn = walkSpeedToggle.Value
+    local walkSpeedOn = walkSpeedToggleBtn.Value.Value
     
     if walkSpeedOn then
         humanoid.WalkSpeed = 50
-        walkSpeedSlider.Value = 1
+        sliderMT.Value = 1
     else
         humanoid.WalkSpeed = 16
-        walkSpeedSlider.Value = 0
+        sliderMT.Value = 0
     end
     
     if walkSpeedOn then
@@ -255,16 +242,23 @@ walkSpeedToggle.ValueChanged:Connect(toggleWalkSpeed)
 ---------------------------------------------------------
 -- FEATURE 2: FLY SPEED TOGGLE
 ---------------------------------------------------------
-local flySpeedToggleBtn, flySpeedToggle = createModernToggle("FlySpeedToggle", "Noclip Fly: OFF", 4)
+local flySpeedToggleBtn = createModernToggle("FlySpeedToggle", "Noclip Fly: OFF", 4)
 flySpeedToggleBtn.Parent = tabLayout
+
+local flySpeedToggle = {
+    ValueChanged = events.FlySpeedToggle.Event
+}
+local flyMT = setmetatable(flySpeedToggle, {
+    __index = function(t, k) if k == "Value" then return flySpeedToggleBtn.Value.Value end end,
+    __newindex = function(t, k, v) if k == "Value" then flySpeedToggleBtn.Value.Value = v end end
+})
 
 local function toggleFlySpeed()
     local character = player.Character or player.CharacterAdded:Wait()
     if not character then return end
     
-    local flySpeedOn = flySpeedToggle.Value
+    local flySpeedOn = flySpeedToggleBtn.Value.Value
     
-    -- Fixed the internal typo from the original AI script (" humanoidRootPart")
     local rootPart = character:WaitForChild("HumanoidRootPart")
     if rootPart then
         rootPart.CanCollide = not flySpeedOn
@@ -320,6 +314,6 @@ end
 
 minimizeButton.Activated:Connect(onActivate)
 
--- Initialize the UI safely without throwing error logs
-walkSpeedToggle.Value = false
-flySpeedToggle.Value = false
+-- Initialize values cleanly
+toggleMT.Value = false
+flyMT.Value = false
